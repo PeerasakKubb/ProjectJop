@@ -1,4 +1,4 @@
-# Render Blueprint — Laravel via Docker (Render has no native PHP runtime)
+# Render Blueprint — Laravel via Docker (PHP 8.3 + nginx)
 
 databases:
   - name: education-app-db
@@ -15,7 +15,6 @@ services:
     region: singapore
     branch: main
     healthCheckPath: /up
-    # nginx must listen on $PORT (see scripts/00-bind-render-port.sh)
     envVars:
       - key: APP_NAME
         value: Smart Classroom

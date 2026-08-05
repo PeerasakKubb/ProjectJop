@@ -3,6 +3,10 @@ vendor
 .git
 .gitignore
 *.md
+.env
+.env.*
 storage/logs/*
 storage/framework/cache/data/*
 .phpunit.result.cache
+tests
+firmware

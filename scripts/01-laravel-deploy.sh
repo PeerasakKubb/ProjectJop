@@ -1,10 +1,9 @@
-#!/usr/bin/env bash
-# Do not use set -e — never block container start / health checks
+#!/usr/bin/env sh
 cd /var/www/html || exit 0
 
 echo "==> Ensure APP_KEY"
-if [[ -z "${APP_KEY:-}" || "${APP_KEY}" != base64:* ]]; then
-  php artisan key:generate --force || true
+if [ -z "${APP_KEY:-}" ] || ! echo "$APP_KEY" | grep -q '^base64:'; then
+  php artisan key:generate --force 2>/dev/null || true
 fi
 
 echo "==> Storage link"

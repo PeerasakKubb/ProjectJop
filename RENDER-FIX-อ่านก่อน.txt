@@ -1,0 +1,21 @@
+แก้ Render แล้ว — ขั้นตอนสุดท้าย (ต้อง push ขึ้น GitHub)
+
+สาเหตุที่เว็บพัง:
+  Docker ใช้ PHP 8.2 แต่ Laravel ต้องการ PHP 8.3
+  → composer install ล้มเหลว → ไม่มี vendor → error 500
+
+สิ่งที่แก้แล้ว (ในโฟลเดอร์นี้):
+  - Dockerfile ใหม่ (PHP 8.3 + nginx + build Vite อัตโนมัติ)
+  - docker/nginx.conf (health /up)
+  - docker/start.sh (bind PORT ของ Render)
+  - scripts/01-laravel-deploy.sh (migrate ตอน start)
+
+วิธี deploy:
+  1) Double-click: push-render-fix.bat บน Desktop
+  2) รอจนเห็น SUCCESS
+  3) ไป Render → education-app → Manual Deploy → Deploy latest commit
+  4) รอ 5-10 นาที แล้วเปิด https://education-app-myav.onrender.com
+
+ถ้า push ไม่ได้ (ต้อง login GitHub):
+  - เปิด GitHub Desktop หรือ
+  - git push ด้วย token ของคุณเอง
