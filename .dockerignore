@@ -1,0 +1,8 @@
+node_modules
+vendor
+.git
+.gitignore
+*.md
+storage/logs/*
+storage/framework/cache/data/*
+.phpunit.result.cache

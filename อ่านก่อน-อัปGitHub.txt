@@ -1,0 +1,42 @@
+สำคัญมาก — อ่านก่อน Deploy
+============================
+
+ทำไม Render พังตอนนี้
+1) Build Command ยังเป็น: npm install; npm run build
+2) บน GitHub ยังไม่มี resources/css/app.css และ resources/js/app.js
+
+ต้องทำ 2 อย่าง
+
+--------------------------------
+A) อัปโค้ดใหม่ขึ้น GitHub ให้ครบ
+--------------------------------
+ใช้ไฟล์นี้บนเดสก์ท็อป:
+  C:\Users\peera\Desktop\education-app-github.zip
+หรือโฟลเดอร์:
+  C:\Users\peera\Desktop\education-app-github
+
+อัปแล้วต้องเห็นบน GitHub (ที่ root ของ repo):
+  resources/css/app.css
+  resources/js/app.js
+  public/build/manifest.json
+  scripts/render-build.sh
+
+ตรวจด้วยการเปิดลิงก์:
+  https://github.com/<USER>/<REPO>/blob/main/resources/css/app.css
+ถ้าขึ้น 404 = ยังอัปไม่ถึง / อัปซ้อนโฟลเดอร์ผิดชั้น
+
+อย่าอัปจนได้โครงสร้างแบบนี้ (ผิด):
+  my-repo/education-app-github/resources/...
+ต้องเป็น:
+  my-repo/resources/...
+
+--------------------------------
+B) แก้ Build Command บน Render
+--------------------------------
+Settings → Build Command เปลี่ยนเป็น:
+
+chmod +x scripts/render-build.sh && ./scripts/render-build.sh
+
+แล้วกด Manual Deploy ใหม่
+
+(อย่าใช้ npm install; npm run build อีก)
