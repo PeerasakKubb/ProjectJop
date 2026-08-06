@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 Route::get('/', [FrontController::class, 'home'])->name('home');
+Route::get('/ping', fn () => response('pong', 200, ['Content-Type' => 'text/plain']));
 Route::get('/features', [FrontController::class, 'features'])->name('features');
 Route::get('/about', [FrontController::class, 'about'])->name('about');
 Route::get('/courses', [FrontController::class, 'courses'])->name('courses.public');

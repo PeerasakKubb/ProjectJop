@@ -51,7 +51,7 @@ COPY docker/start.sh /start.sh
 RUN chmod +x /start.sh
 
 ENV APP_ENV=production
-ENV APP_DEBUG=false
+ENV APP_DEBUG=true
 ENV LOG_CHANNEL=stderr
 ENV SESSION_DRIVER=file
 ENV CACHE_STORE=file
