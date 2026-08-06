@@ -44,3 +44,5 @@ services:
         value: database
       - key: MQTT_ENABLED
         value: false
+      - key: BACKUP_SECRET
+        value: sc-backup-peera-2026

@@ -79,4 +79,8 @@ return [
         'demo_mode' => env('AI_DEMO_MODE', false),
     ],
 
+    'backup' => [
+        'secret' => env('BACKUP_SECRET', env('RENDER') ? 'sc-backup-peera-2026' : null),
+    ],
+
 ];

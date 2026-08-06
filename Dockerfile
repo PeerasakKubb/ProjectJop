@@ -22,6 +22,7 @@ FROM php:8.4-fpm-alpine
 
 RUN apk add --no-cache \
     nginx \
+    postgresql-client \
     postgresql-dev \
     icu-dev \
     libzip-dev \

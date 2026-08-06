@@ -1,10 +1,15 @@
 <?php
 
+use App\Http\Controllers\Api\BackupController;
 use App\Http\Controllers\Api\DeviceStatusController;
 use App\Http\Controllers\Api\RfidScanController;
 use App\Http\Controllers\Api\SensorIngestController;
+use App\Http\Middleware\VerifyBackupSecret;
 use App\Http\Middleware\VerifyReaderApiKey;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/admin/backup', [BackupController::class, 'download'])
+    ->middleware(VerifyBackupSecret::class);
 
 Route::post('/rfid/scan', [RfidScanController::class, 'scan'])
     ->middleware(VerifyReaderApiKey::class);
