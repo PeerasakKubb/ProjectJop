@@ -27,7 +27,6 @@ class AppServiceProvider extends ServiceProvider
             config([
                 'session.driver' => 'file',
                 'cache.default' => 'file',
-                'app.debug' => true,
             ]);
         }
 

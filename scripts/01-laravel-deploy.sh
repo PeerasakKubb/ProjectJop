@@ -3,10 +3,17 @@ cd /var/www/html
 
 echo "==> Laravel post-start"
 
-if [ -z "${APP_KEY:-}" ] || ! echo "$APP_KEY" | grep -q '^base64:'; then
-  echo "==> Generate APP_KEY"
-  php artisan key:generate --force || true
-fi
+echo "==> Ensure valid APP_KEY"
+export APP_KEY="$(php -r '
+$key = getenv("APP_KEY") ?: "";
+$raw = str_starts_with($key, "base64:") ? base64_decode(substr($key, 7), true) : false;
+if ($raw !== false && in_array(strlen($raw), [16, 32], true)) {
+    echo $key;
+    exit;
+}
+echo "base64:" . base64_encode(random_bytes(32));
+')"
+echo "APP_KEY ready"
 
 php artisan storage:link 2>/dev/null || true
 
