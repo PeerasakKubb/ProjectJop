@@ -23,6 +23,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (env('RENDER')) {
+            config([
+                'session.driver' => 'file',
+                'cache.default' => 'file',
+            ]);
+        }
+
         if ($this->app->environment('production')) {
             URL::forceRootUrl(config('app.url'));
             URL::forceScheme('https');
