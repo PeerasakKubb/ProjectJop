@@ -17,7 +17,13 @@ $appKey = $_ENV['APP_KEY'] ?? $_SERVER['APP_KEY'] ?? getenv('APP_KEY') ?: '';
 $keyFile = __DIR__.'/../storage/app/render-app-key';
 
 if (is_readable($keyFile)) {
-    $appKey = trim((string) file_get_contents($keyFile));
+    $fromFile = trim((string) file_get_contents($keyFile));
+    $decodedFile = str_starts_with($fromFile, 'base64:')
+        ? base64_decode(substr($fromFile, 7), true)
+        : false;
+    if ($decodedFile !== false && in_array(strlen($decodedFile), [16, 32], true)) {
+        $appKey = $fromFile;
+    }
 }
 
 $decodedKey = str_starts_with($appKey, 'base64:')
@@ -26,11 +32,13 @@ $decodedKey = str_starts_with($appKey, 'base64:')
 
 if ($decodedKey === false || ! in_array(strlen($decodedKey), [16, 32], true)) {
     $appKey = 'base64:'.base64_encode(random_bytes(32));
+    @mkdir(dirname($keyFile), 0777, true);
     @file_put_contents($keyFile, $appKey);
-    putenv("APP_KEY={$appKey}");
-    $_ENV['APP_KEY'] = $appKey;
-    $_SERVER['APP_KEY'] = $appKey;
 }
+
+putenv("APP_KEY={$appKey}");
+$_ENV['APP_KEY'] = $appKey;
+$_SERVER['APP_KEY'] = $appKey;
 
 // Bootstrap Laravel and handle the request...
 /** @var Application $app */

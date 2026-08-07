@@ -35,6 +35,7 @@ class DatabaseSeeder extends Seeder
             'email' => 'admin@school.local',
             'password' => Hash::make('password'),
             'role' => 'admin',
+            'email_verified_at' => now(),
         ]);
 
         $teacher = User::create([
@@ -42,6 +43,7 @@ class DatabaseSeeder extends Seeder
             'email' => 'teacher@school.local',
             'password' => Hash::make('password'),
             'role' => 'teacher',
+            'email_verified_at' => now(),
         ]);
 
         $students = collect([

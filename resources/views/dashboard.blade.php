@@ -74,11 +74,10 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <x-device-control-scripts />
             <x-page-card title="ควบคุมอุปกรณ์" :action="route('admin.devices.index')" actionLabel="จัดการ">
                 <div class="grid grid-cols-2 gap-3">
                     @forelse ($devices as $device)
-                        <div class="rounded-xl p-4 border transition-all duration-200 {{ $device->is_on ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-white/10 bg-white/5' }}">
+                        <div data-device-card class="rounded-xl p-4 border transition-all duration-200 {{ $device->is_on ? 'border-emerald-500/40 bg-emerald-500/10' : 'border-white/10 bg-white/5' }}">
                             <div class="flex justify-between items-start mb-3">
                                 <div>
                                     <p class="font-semibold text-sm text-white">{{ $device->name }}</p>

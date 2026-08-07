@@ -4,15 +4,32 @@ cd /var/www/html
 echo "==> Laravel post-start"
 
 echo "==> Ensure valid APP_KEY"
+KEY_FILE="storage/app/render-app-key"
+mkdir -p storage/app
+
 export APP_KEY="$(php -r '
-$key = getenv("APP_KEY") ?: "";
-$raw = str_starts_with($key, "base64:") ? base64_decode(substr($key, 7), true) : false;
-if ($raw !== false && in_array(strlen($raw), [16, 32], true)) {
-    echo $key;
-    exit;
+$keyFile = "storage/app/render-app-key";
+$envKey = getenv("APP_KEY") ?: "";
+$candidates = [];
+if (is_readable($keyFile)) {
+    $candidates[] = trim((string) file_get_contents($keyFile));
 }
-echo "base64:" . base64_encode(random_bytes(32));
+$candidates[] = $envKey;
+$valid = null;
+foreach ($candidates as $key) {
+    $raw = str_starts_with($key, "base64:") ? base64_decode(substr($key, 7), true) : false;
+    if ($raw !== false && in_array(strlen($raw), [16, 32], true)) {
+        $valid = $key;
+        break;
+    }
+}
+if ($valid === null) {
+    $valid = "base64:" . base64_encode(random_bytes(32));
+}
+file_put_contents($keyFile, $valid);
+echo $valid;
 ')"
+
 echo "APP_KEY ready"
 
 php artisan storage:link 2>/dev/null || true

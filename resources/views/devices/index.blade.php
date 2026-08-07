@@ -1,20 +1,20 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" x-data="deviceBulkControl()">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
                 <p class="text-xs font-bold uppercase tracking-widest text-cyan-400 mb-1">IoT Control</p>
                 <h2 class="text-3xl font-black text-white">ควบคุม<span class="text-gradient">หลอดไฟ</span></h2>
             </div>
             <div class="flex flex-wrap gap-2">
-                <form @submit.prevent="submit('{{ route('admin.devices.turn-on-all') }}')">
+                <form method="POST" action="{{ route('admin.devices.turn-on-all') }}">
                     @csrf
-                    <button type="submit" :disabled="loading" class="px-5 py-2.5 rounded-xl font-semibold text-white bg-emerald-500 hover:bg-emerald-600 shadow-md shadow-emerald-500/25 transition-all">
+                    <button type="submit" class="px-5 py-2.5 rounded-xl font-semibold text-white bg-emerald-500 hover:bg-emerald-600 shadow-md shadow-emerald-500/25 transition-all">
                         เปิดไฟรวม
                     </button>
                 </form>
-                <form @submit.prevent="submit('{{ route('admin.devices.turn-off-all') }}')">
+                <form method="POST" action="{{ route('admin.devices.turn-off-all') }}">
                     @csrf
-                    <button type="submit" :disabled="loading" class="px-5 py-2.5 rounded-xl font-semibold text-white bg-rose-500 hover:bg-rose-600 shadow-md shadow-rose-500/25 transition-all">
+                    <button type="submit" class="px-5 py-2.5 rounded-xl font-semibold text-white bg-rose-500 hover:bg-rose-600 shadow-md shadow-rose-500/25 transition-all">
                         ปิดไฟรวม
                     </button>
                 </form>
@@ -23,18 +23,21 @@
     </x-slot>
 
     <div class="py-8">
-        <x-device-control-scripts />
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             @if (session('success'))
                 <div class="flash-success">{{ session('success') }}</div>
             @endif
+            @if ($errors->any())
+                <div class="rounded-xl border border-rose-500/40 bg-rose-500/10 p-4 text-rose-100 text-sm">
+                    {{ $errors->first() }}
+                </div>
+            @endif
 
-            <div class="app-card p-5">
-                <p class="font-bold text-white">หลอดไฟห้องเรียน (ออนไลน์)</p>
-                <p class="text-sm text-slate-400 mt-1">
-                    ESP32 ต้อง poll จาก
+            <div class="app-card p-5 space-y-2">
+                <p class="font-bold text-white">หลอดไฟห้องเรียน</p>
+                <p class="text-sm text-slate-400">
+                    กดเปิด/ปิดแล้วสถานะบันทึกบนเซิร์ฟเวอร์ทันที — ESP32 ดึงจาก
                     <code class="text-cyan-400">{{ config('app.url') }}/api/devices/poll-lights</code>
-                    — ถ้าขึ้นออฟไลน์ ให้ Upload firmware ใหม่ที่ชี้ Render
                 </p>
             </div>
 
@@ -54,7 +57,7 @@
                             </span>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span data-device-state class="text-3xl font-extrabold {{ $device->is_on ? 'text-emerald-600' : 'text-slate-300' }}">
+                            <span class="text-3xl font-extrabold {{ $device->is_on ? 'text-emerald-600' : 'text-slate-300' }}">
                                 {{ $device->is_on ? 'ON' : 'OFF' }}
                             </span>
                             <x-device-toggle-form :device="$device" />
