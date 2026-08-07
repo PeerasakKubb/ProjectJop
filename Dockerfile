@@ -54,7 +54,7 @@ RUN chmod +x /start.sh
 ENV APP_ENV=production
 ENV APP_DEBUG=false
 ENV LOG_CHANNEL=stderr
-ENV SESSION_DRIVER=file
+ENV SESSION_DRIVER=database
 ENV CACHE_STORE=file
 
 EXPOSE 10000

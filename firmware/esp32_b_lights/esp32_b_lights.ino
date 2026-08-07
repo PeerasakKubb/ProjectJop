@@ -1,13 +1,12 @@
 /*
  * ESP-B Lights — LED x6 + Relay 12V
+ * โหมดออนไลน์: poll Render เป็นหลัก, local เป็นสำรอง
  *
  * สาย LED: GPIO → 220Ω → LED(+) ; LED(−) → GND
  *   LED1–6 → 13, 14, 16, 17, 25, 26
  * Relay IN → GPIO 27
  *
  * Board: ESP32 Dev Module | Serial: 115200
- *
- * ลำดับ: ทดสอบ LED → WiFi → poll local → ถ้าไม่ได้ค่อยลอง Render
  */
 
 #include <WiFi.h>
@@ -20,27 +19,25 @@ const char* WIFI_SSID = "ELECLAB2";
 const char* WIFI_PASS = "171172173";
 const char* LIGHTS_API_KEY = "lights-station-key";
 
-// Primary = local Laravel (ตอนไฟเคยติด)
+// Primary = Render ออนไลน์ (สั่งจากเว็บ onrender.com)
+const char* RENDER_HOST = "education-app-myav.onrender.com";
+
+// Fallback = Laravel local ในแล็บ
 const char* LOCAL_HOST = "10.5.200.126";
 const int   LOCAL_PORT = 8000;
 
-// Fallback = Render ออนไลน์
-const char* RENDER_HOST = "education-app-myav.onrender.com";
-
 const int LED_PINS[6] = {13, 14, 16, 17, 25, 26};
 #define RELAY_PIN 27
-
-// true = HIGH = เปิด | false = LOW = เปิด (relay บางตัว active-low)
 bool RELAY_ACTIVE_HIGH = true;
 
-const unsigned long POLL_MS = 2000;
-const unsigned long HTTP_TIMEOUT_MS = 20000;
+const unsigned long POLL_MS = 2500;
+const unsigned long HTTP_TIMEOUT_MS = 45000;
 
 unsigned long lastPollMs = 0;
 bool ledOn[6] = {false, false, false, false, false, false};
 bool syncedOnce = false;
 int failStreak = 0;
-bool useRender = false;
+bool useRender = true; // ออนไลน์เป็นค่าเริ่มต้น
 
 WiFiClient plainClient;
 WiFiClientSecure secureClient;
@@ -70,27 +67,24 @@ void applyOutputs() {
 }
 
 void hardwareSelfTest() {
-  Serial.println("SELF-TEST: เปิด LED ทีละดวง...");
+  Serial.println("SELF-TEST LEDs...");
   for (int i = 0; i < 6; i++) {
     allOutputsOff();
     digitalWrite(LED_PINS[i], HIGH);
     digitalWrite(RELAY_PIN, RELAY_ACTIVE_HIGH ? HIGH : LOW);
-    Serial.printf("  LED%d ON\n", i + 1);
-    delay(250);
+    delay(200);
   }
-  allOutputsOff();
-  Serial.println("SELF-TEST: เปิดทั้ง 6 ดวง 1 วินาที...");
   for (int i = 0; i < 6; i++) {
     digitalWrite(LED_PINS[i], HIGH);
     ledOn[i] = true;
   }
   applyOutputs();
-  delay(1000);
+  delay(800);
   for (int i = 0; i < 6; i++) {
     ledOn[i] = false;
   }
   allOutputsOff();
-  Serial.println("SELF-TEST เสร็จ — ถ้าตอนนี้ LED ไม่ติดเลย = ปัญหาสาย/ไฟเลี้ยง");
+  Serial.println("SELF-TEST done");
 }
 
 bool connectWifi() {
@@ -115,7 +109,7 @@ bool connectWifi() {
   Serial.println();
 
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("WiFi FAIL — รีเซ็ตใน 5 วินาที");
+    Serial.println("WiFi FAIL — restart");
     delay(5000);
     ESP.restart();
     return false;
@@ -123,8 +117,6 @@ bool connectWifi() {
 
   Serial.print("WiFi OK IP=");
   Serial.println(WiFi.localIP());
-  Serial.print("Gateway=");
-  Serial.println(WiFi.gatewayIP());
   return true;
 }
 
@@ -166,12 +158,9 @@ bool pollLights() {
   String url = pollUrl();
   Serial.println(url);
 
-  bool okBegin;
-  if (useRender) {
-    okBegin = http.begin(secureClient, url);
-  } else {
-    okBegin = http.begin(plainClient, url);
-  }
+  bool okBegin = useRender
+    ? http.begin(secureClient, url)
+    : http.begin(plainClient, url);
 
   if (!okBegin) {
     Serial.println("HTTP begin FAIL");
@@ -179,15 +168,15 @@ bool pollLights() {
   }
 
   http.addHeader("X-API-Key", LIGHTS_API_KEY);
-  http.addHeader("User-Agent", "ESP32-B-Lights/2.0");
+  http.addHeader("User-Agent", "ESP32-B-Lights/online");
 
   int code = http.GET();
   String body = http.getString();
   http.end();
 
-  Serial.printf("poll-lights → HTTP %d (len=%d)\n", code, body.length());
+  Serial.printf("poll-lights → HTTP %d\n", code);
   if (code < 200 || code >= 300) {
-    Serial.println(body.substring(0, 200));
+    Serial.println(body.substring(0, 180));
     return false;
   }
 
@@ -207,19 +196,13 @@ bool pollLights() {
   }
 
   if (parsed < 6) {
-    Serial.printf("WARNING: parse ได้แค่ %d/6\n", parsed);
-    Serial.println(body.substring(0, 240));
+    Serial.printf("WARNING: parsed %d/6\n", parsed);
     return false;
   }
 
-  if (!syncedOnce || changed) {
-    applyOutputs();
-    syncedOnce = true;
-    if (!changed) Serial.println("  sync OK (สถานะเดิม)");
-  } else {
-    applyOutputs();
-  }
-
+  applyOutputs();
+  syncedOnce = true;
+  if (!changed) Serial.println("  sync OK");
   return true;
 }
 
@@ -229,7 +212,7 @@ void setup() {
   Serial.begin(115200);
   delay(1500);
   Serial.println();
-  Serial.println("=== ESP-B Lights v2 (local + Render fallback) ===");
+  Serial.println("=== ESP-B Lights ONLINE (Render primary) ===");
 
   for (int i = 0; i < 6; i++) {
     pinMode(LED_PINS[i], OUTPUT);
@@ -238,37 +221,35 @@ void setup() {
   allOutputsOff();
 
   hardwareSelfTest();
-
   secureClient.setInsecure();
   connectWifi();
 
-  useRender = false;
-  Serial.println("ลอง poll LOCAL ก่อน...");
-  for (int attempt = 1; attempt <= 5; attempt++) {
-    Serial.printf("local attempt %d/5\n", attempt);
+  useRender = true;
+  Serial.println("Poll RENDER (cold start may take 30-60s)...");
+  for (int attempt = 1; attempt <= 8; attempt++) {
+    Serial.printf("render attempt %d/8\n", attempt);
     if (pollLights()) {
       failStreak = 0;
-      Serial.println("ใช้ LOCAL server");
+      Serial.println("Using RENDER");
+      lastPollMs = millis();
+      return;
+    }
+    delay(4000);
+  }
+
+  Serial.println("RENDER failed — try LOCAL...");
+  useRender = false;
+  for (int attempt = 1; attempt <= 3; attempt++) {
+    if (pollLights()) {
+      failStreak = 0;
+      Serial.println("Using LOCAL");
       lastPollMs = millis();
       return;
     }
     delay(2000);
   }
 
-  Serial.println("LOCAL ไม่ได้ — สลับไป RENDER...");
-  useRender = true;
-  for (int attempt = 1; attempt <= 5; attempt++) {
-    Serial.printf("render attempt %d/5\n", attempt);
-    if (pollLights()) {
-      failStreak = 0;
-      Serial.println("ใช้ RENDER server");
-      lastPollMs = millis();
-      return;
-    }
-    delay(5000);
-  }
-
-  Serial.println("ERROR: poll ไม่สำเร็จทั้ง local และ Render");
+  Serial.println("ERROR: no server reachable");
   lastPollMs = millis();
 }
 
@@ -289,12 +270,11 @@ void loop() {
       failStreak = 0;
     } else {
       failStreak++;
-      Serial.printf("fail streak=%d\n", failStreak);
-      if (failStreak >= 3) {
+      if (failStreak >= 4) {
         useRender = !useRender;
         failStreak = 0;
         syncedOnce = false;
-        Serial.printf("สลับเซิร์ฟเวอร์ → %s\n", useRender ? "RENDER" : "LOCAL");
+        Serial.printf("switch server → %s\n", useRender ? "RENDER" : "LOCAL");
       }
     }
   }

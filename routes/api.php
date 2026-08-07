@@ -18,6 +18,7 @@ Route::post('/sensors/reading', [SensorIngestController::class, 'store']);
 
 Route::get('/devices/poll', [DeviceStatusController::class, 'poll']);
 Route::get('/devices/poll-lights', [DeviceStatusController::class, 'pollLights']);
+Route::post('/devices/lights/set-all', [DeviceStatusController::class, 'setAllLights']);
 Route::post('/devices/{device}/status', [DeviceStatusController::class, 'updateStatus']);
 
 Route::post('/telegram/webhook', [\App\Http\Controllers\Api\TelegramWebhookController::class, 'handle']);

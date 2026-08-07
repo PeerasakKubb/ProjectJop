@@ -42,6 +42,7 @@ fi
 
 echo "==> Seed database"
 php artisan db:seed --force || echo "WARN: seed skipped or partial"
+php artisan db:seed --class=LightsDevicesSeeder --force || echo "WARN: lights seed skipped"
 
 echo "==> Cache for production"
 php artisan config:cache || echo "WARN: config:cache failed"

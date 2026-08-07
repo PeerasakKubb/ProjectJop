@@ -25,7 +25,7 @@ class AppServiceProvider extends ServiceProvider
     {
         if (env('RENDER')) {
             config([
-                'session.driver' => 'file',
+                'session.driver' => 'database',
                 'cache.default' => 'file',
             ]);
         }

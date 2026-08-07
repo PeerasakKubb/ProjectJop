@@ -74,6 +74,7 @@
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <x-device-control-scripts />
             <x-page-card title="ควบคุมอุปกรณ์" :action="route('admin.devices.index')" actionLabel="จัดการ">
                 <div class="grid grid-cols-2 gap-3">
                     @forelse ($devices as $device)
@@ -85,12 +86,10 @@
                                 </div>
                                 <span class="w-2.5 h-2.5 rounded-full {{ $device->is_online ? 'bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]' : 'bg-slate-600' }}"></span>
                             </div>
-                            <form action="{{ route('admin.devices.toggle', $device) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="w-full text-sm py-2 rounded-lg font-medium text-white transition-all {{ $device->is_on ? 'bg-rose-500 hover:bg-rose-600' : 'bg-emerald-500 hover:bg-emerald-600' }}">
-                                    {{ $device->is_on ? 'ปิด' : 'เปิด' }}
-                                </button>
-                            </form>
+                            <x-device-toggle-form
+                                :device="$device"
+                                button-class="w-full text-sm py-2 rounded-lg font-medium text-white transition-all"
+                            />
                         </div>
                     @empty
                         <p class="text-slate-500 text-sm col-span-2 text-center py-6">ยังไม่มีอุปกรณ์</p>
