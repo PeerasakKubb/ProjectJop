@@ -9,6 +9,7 @@
 
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 #include <SPI.h>
 #include <MFRC522.h>
 #include <Wire.h>
@@ -20,11 +21,18 @@
 
 const char* WIFI_SSID   = "ELECLAB2";
 const char* WIFI_PASS   = "171172173";
-const char* SERVER_HOST = "10.5.200.126";
-const int   SERVER_PORT = 8000;
+
+// ออนไลน์ Render (หลัก) — local เป็นสำรองถ้า Render ล้ม
+const bool  USE_HTTPS_DEFAULT = true;
+const char* RENDER_HOST = "education-app-myav.onrender.com";
+const char* LOCAL_HOST  = "10.5.200.126";
+const int   LOCAL_PORT  = 8000;
+
 const char* RFID_API_KEY     = "demo-reader-key-12345";
 const char* TEMP_API_KEY     = "sensor-temp-key";
 const char* HUMIDITY_API_KEY = "sensor-humidity-key";
+
+bool useRender = true;
 
 #define PIN_OLED_SDA  21
 #define PIN_OLED_SCL  22
@@ -63,8 +71,14 @@ char lineTitle[22] = "";
 char lineDetail[22] = "";
 
 String baseUrl() {
-  return String("http://") + SERVER_HOST + ":" + SERVER_PORT;
+  if (useRender) {
+    return String("https://") + RENDER_HOST;
+  }
+  return String("http://") + LOCAL_HOST + ":" + LOCAL_PORT;
 }
+
+WiFiClient plainClient;
+WiFiClientSecure secureClient;
 
 void logln(const String& s) {
   Serial.println(s);
@@ -176,7 +190,7 @@ bool connectWifi() {
   WiFi.mode(WIFI_OFF);
   delay(150);
   WiFi.mode(WIFI_STA);
-  WiFi.setSleep(true);
+  WiFi.setSleep(false);
   WiFi.setTxPower(WIFI_POWER_11dBm);
   WiFi.begin(WIFI_SSID, WIFI_PASS);
   unsigned long t0 = millis();
@@ -224,16 +238,36 @@ bool postRaw(const String& path, const String& body,
              const char* hdrKey, const char* hdrVal, String& responseOut) {
   responseOut = "";
   if (WiFi.status() != WL_CONNECTED) return false;
+
   HTTPClient http;
-  http.setTimeout(8000);
-  if (!http.begin(baseUrl() + path)) return false;
+  http.setTimeout(useRender ? 45000 : 8000);
+  http.setReuse(false);
+
+  String url = baseUrl() + path;
+  Serial.println(url);
+
+  bool okBegin = useRender
+    ? http.begin(secureClient, url)
+    : http.begin(plainClient, url);
+
+  if (!okBegin) return false;
+
   http.addHeader("Content-Type", "application/json");
   if (hdrKey && hdrVal) http.addHeader(hdrKey, hdrVal);
+
   int code = http.POST(body);
   responseOut = http.getString();
   Serial.printf("POST %s -> %d\n", path.c_str(), code);
   http.end();
-  return code >= 200 && code < 300;
+
+  if (code >= 200 && code < 300) return true;
+
+  // ถ้า Render พัง ให้ลอง local ครั้งถัดไป
+  if (useRender && (code < 0 || code >= 500)) {
+    Serial.println("Render fail — next try LOCAL");
+    useRender = false;
+  }
+  return false;
 }
 
 bool postReading(const char* key, float value) {
@@ -386,7 +420,11 @@ void setup() {
     delay(700);
     overlayUntil = 0;
   }
-  if (connectWifi()) syncTime();
+  if (connectWifi()) {
+    secureClient.setInsecure();
+    useRender = USE_HTTPS_DEFAULT;
+    syncTime();
+  }
   initRfid();
   lastSensorMs = millis() - SENSOR_MS;
   lastUiMs = millis();
@@ -395,6 +433,7 @@ void setup() {
   logln(String("OLED : ") + (oledOk ? "OK" : "FAIL"));
   logln(String("RFID : ") + (rfidOk ? "OK" : "FAIL"));
   logln(String("WiFi : ") + myIp);
+  logln(String("Server: ") + baseUrl());
   logln("RFID mode = classroom attendance check-in");
   logln("-----------------");
 }

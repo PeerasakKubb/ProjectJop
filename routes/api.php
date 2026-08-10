@@ -28,13 +28,22 @@ Route::post('/line/webhook', [\App\Http\Controllers\Api\LineWebhookController::c
 Route::get('/health', function () {
     try {
         \Illuminate\Support\Facades\DB::connection()->getPdo();
-        $tables = ['sessions', 'users', 'courses', 'cache'];
+        $tables = ['sessions', 'users', 'courses', 'cache', 'sensors', 'rfid_readers', 'sensor_readings'];
         $status = [];
         foreach ($tables as $table) {
             $status[$table] = \Illuminate\Support\Facades\Schema::hasTable($table);
         }
 
-        return response()->json(['ok' => true, 'tables' => $status]);
+        return response()->json([
+            'ok' => true,
+            'tables' => $status,
+            'sensors' => \App\Models\Sensor::query()->count(),
+            'rfid_readers' => \App\Models\RfidReader::query()->count(),
+            'sensor_readings' => \App\Models\SensorReading::query()->count(),
+            'attendance_today' => \App\Models\AttendanceRecord::query()
+                ->whereDate('scanned_at', now()->toDateString())
+                ->count(),
+        ]);
     } catch (\Throwable $e) {
         return response()->json(['ok' => false, 'error' => $e->getMessage()], 500);
     }

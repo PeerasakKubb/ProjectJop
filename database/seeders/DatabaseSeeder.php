@@ -26,6 +26,8 @@ class DatabaseSeeder extends Seeder
     {
         if (User::query()->exists()) {
             $this->call(SiteSettingsSeeder::class);
+            $this->call(LightsDevicesSeeder::class);
+            $this->call(IotHubSeeder::class);
 
             return;
         }
