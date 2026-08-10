@@ -2,9 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Models\RfidCard;
 use App\Models\RfidReader;
 use App\Models\Room;
 use App\Models\Sensor;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class IotHubSeeder extends Seeder
@@ -55,5 +57,22 @@ class IotHubSeeder extends Seeder
                 'max_threshold' => null,
             ],
         );
+
+        $students = User::query()
+            ->where('role', 'student')
+            ->orderBy('id')
+            ->get();
+
+        foreach ($students as $index => $student) {
+            $uid = 'CARD'.str_pad((string) ($index + 1), 4, '0', STR_PAD_LEFT);
+
+            RfidCard::updateOrCreate(
+                ['card_uid' => $uid],
+                [
+                    'user_id' => $student->id,
+                    'is_active' => true,
+                ],
+            );
+        }
     }
 }
