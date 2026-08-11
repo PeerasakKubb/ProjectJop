@@ -1,6 +1,6 @@
 /*
  * ESP-B Lights — LED x6 + Relay 12V
- * ออนไลน์เท่านั้น: https://education-app-myav.onrender.com
+ * Backend: https://education-app-myav.onrender.com
  *
  * Board: ESP32 Dev Module | Serial: 115200
  * LED1-6 -> GPIO 13,14,16,17,25,26 | Relay -> GPIO 27
@@ -22,10 +22,12 @@ const int LED_PINS[6] = {13, 14, 16, 17, 25, 26};
 const bool RELAY_ACTIVE_HIGH = true;
 
 const unsigned long POLL_MS = 2000;
-const unsigned long HTTP_TIMEOUT_MS = 60000;
+const unsigned long HTTP_TIMEOUT_MS = 90000;
+const int POLL_RETRIES = 3;
 
 bool ledOn[6] = {false, false, false, false, false, false};
 unsigned long lastPollMs = 0;
+unsigned long consecutivePollFails = 0;
 
 WiFiClientSecure secureClient;
 
@@ -47,6 +49,7 @@ bool connectWifi() {
   WiFi.persistent(false);
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(false);
+  WiFi.setAutoReconnect(true);
   WiFi.begin(WIFI_SSID, WIFI_PASS);
   unsigned long t0 = millis();
   while (WiFi.status() != WL_CONNECTED && millis() - t0 < 30000) {
@@ -77,9 +80,10 @@ bool parseLedState(const String& json, int ledIndex, bool& outOn) {
   return false;
 }
 
-bool pollLights() {
+bool pollLightsOnce() {
   HTTPClient http;
   http.setTimeout(HTTP_TIMEOUT_MS);
+  http.setConnectTimeout(HTTP_TIMEOUT_MS);
   http.setReuse(false);
   String url = String("https://") + RENDER_HOST + "/api/devices/poll-lights";
   Serial.println(url);
@@ -88,26 +92,48 @@ bool pollLights() {
     return false;
   }
   http.addHeader("X-API-Key", LIGHTS_API_KEY);
+  http.addHeader("Connection", "close");
   int code = http.GET();
   String body = http.getString();
   http.end();
-  Serial.printf("HTTP %d\n", code);
+  Serial.printf("HTTP %d len=%d\n", code, body.length());
   if (code < 200 || code >= 300) {
     Serial.println(body.substring(0, 160));
     return false;
   }
   bool changed = false;
+  int parsed = 0;
   for (int i = 0; i < 6; i++) {
     bool on = false;
-    if (parseLedState(body, i, on) && ledOn[i] != on) {
+    if (!parseLedState(body, i, on)) continue;
+    parsed++;
+    if (ledOn[i] != on) {
       ledOn[i] = on;
       changed = true;
       Serial.printf("LED%d=%s\n", i + 1, on ? "ON" : "OFF");
     }
   }
+  if (parsed == 0) {
+    Serial.println("parse FAIL");
+    return false;
+  }
   applyOutputs();
   if (!changed) Serial.println("sync OK");
   return true;
+}
+
+bool pollLights() {
+  for (int attempt = 1; attempt <= POLL_RETRIES; attempt++) {
+    if (pollLightsOnce()) {
+      consecutivePollFails = 0;
+      return true;
+    }
+    Serial.printf("poll retry %d/%d\n", attempt, POLL_RETRIES);
+    delay(1500 * attempt);
+  }
+  consecutivePollFails++;
+  Serial.printf("poll failed x%lu\n", consecutivePollFails);
+  return false;
 }
 
 void setup() {
@@ -126,9 +152,10 @@ void setup() {
   }
   allOutputsOff();
   secureClient.setInsecure();
+  secureClient.setTimeout(90);
   connectWifi();
   for (int a = 1; a <= 10; a++) {
-    Serial.printf("poll %d/10\n", a);
+    Serial.printf("boot poll %d/10\n", a);
     if (pollLights()) break;
     delay(5000);
   }
@@ -137,7 +164,8 @@ void setup() {
 
 void loop() {
   if (WiFi.status() != WL_CONNECTED) {
-    allOutputsOff();
+    // Keep last LED/relay state during brief disconnects.
+    Serial.println("WiFi lost — reconnect (outputs held)");
     connectWifi();
     return;
   }

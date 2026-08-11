@@ -8,6 +8,10 @@ use Illuminate\Database\Seeder;
 
 class LightsDevicesSeeder extends Seeder
 {
+    /**
+     * Ensure the 6 classroom LED devices exist without resetting on/off state
+     * or deleting unrelated devices (deploy runs this on every boot).
+     */
     public function run(): void
     {
         $room = Room::query()->first();
@@ -22,7 +26,7 @@ class LightsDevicesSeeder extends Seeder
         ];
 
         foreach ($leds as $led) {
-            Device::updateOrCreate(
+            $device = Device::query()->firstOrCreate(
                 ['api_key' => $led['api_key']],
                 [
                     'name' => $led['name'],
@@ -33,13 +37,14 @@ class LightsDevicesSeeder extends Seeder
                     'mqtt_topic' => $led['mqtt_topic'],
                 ],
             );
-        }
 
-        Device::query()
-            ->whereNotIn('api_key', [
-                'led-1-key', 'led-2-key', 'led-3-key',
-                'led-4-key', 'led-5-key', 'led-6-key',
-            ])
-            ->delete();
+            // Refresh metadata only — never wipe is_on / is_online on redeploy.
+            $device->fill([
+                'name' => $led['name'],
+                'type' => 'light',
+                'room_id' => $room?->id ?? $device->room_id,
+                'mqtt_topic' => $led['mqtt_topic'],
+            ])->save();
+        }
     }
 }
