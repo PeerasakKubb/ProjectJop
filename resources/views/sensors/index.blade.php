@@ -11,24 +11,18 @@
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 @foreach ($sensors as $sensor)
-                    @php
-                        $reading = $sensor->latestReading;
-                        $age = $reading?->recorded_at?->diffInSeconds(now());
-                        $online = $age !== null && $age <= 90;
-                    @endphp
-                    <div class="bg-white rounded-lg shadow p-6" data-sensor-id="{{ $sensor->id }}">
+                    @php $reading = $sensor->latestReading; @endphp
+                    <div class="bg-white rounded-lg shadow p-6">
                         <p class="text-sm text-gray-500">{{ $sensor->room?->name }}</p>
                         <h3 class="font-semibold text-lg">{{ $sensor->name }}</h3>
                         @if ($reading)
-                            <p class="js-sensor-value text-4xl font-bold mt-2 {{ $sensor->max_threshold && $reading->value > $sensor->max_threshold ? 'text-red-600' : 'text-indigo-600' }}">
+                            <p class="text-4xl font-bold mt-2 {{ $sensor->max_threshold && $reading->value > $sensor->max_threshold ? 'text-red-600' : 'text-indigo-600' }}">
                                 {{ number_format($reading->value, 1) }}
                                 <span class="text-lg">{{ $sensor->unit }}</span>
                             </p>
-                            <p class="js-sensor-ago text-xs mt-1 {{ $online ? 'text-gray-400' : 'text-red-500' }}">
-                                {{ $online ? 'อัปเดต '.$reading->recorded_at->locale('th')->diffForHumans() : 'ขาดการเชื่อมต่อจาก ESP · อัปเดตล่าสุด '.$reading->recorded_at->locale('th')->diffForHumans() }}
-                            </p>
+                            <p class="text-xs text-gray-400 mt-1">อัปเดต {{ $reading->recorded_at->diffForHumans() }}</p>
                         @else
-                            <p class="js-sensor-ago text-gray-400 mt-4">รอข้อมูลจากเซนเซอร์ — เปิด ESP-A ค้างไว้</p>
+                            <p class="text-gray-400 mt-4">รอข้อมูลจากเซนเซอร์</p>
                         @endif
                     </div>
                 @endforeach
@@ -37,7 +31,6 @@
             @if ($sensors->isNotEmpty())
                 <div class="bg-white rounded-lg shadow p-6">
                     <h3 class="font-semibold mb-4">กราฟข้อมูล {{ $hours }} ชั่วโมงล่าสุด</h3>
-                    <p id="sensorChartStatus" class="text-sm text-gray-400 mb-2">กำลังโหลดกราฟ…</p>
                     <canvas id="sensorChart" height="100"></canvas>
                 </div>
             @endif
@@ -68,93 +61,32 @@
         </div>
     </div>
 
-    @if ($sensors->isNotEmpty())
     @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        (function () {
-            const status = document.getElementById('sensorChartStatus');
-            const canvas = document.getElementById('sensorChart');
-            const chartUrl = @json(route('admin.sensors.chart', array_filter(['room_id' => $roomId, 'hours' => $hours])));
-            const colors = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'];
-
-            function drawChart(payload) {
-                const datasets = Object.entries(payload.series || {}).map(([id, points], i) => ({
-                    label: payload.names[id] || ('Sensor ' + id),
-                    data: (points || []).map((p) => p.v),
-                    borderColor: colors[i % colors.length],
-                    tension: 0.3,
-                    fill: false,
-                    pointRadius: 0,
-                }));
-                const labels = Object.values(payload.series || [])[0]?.map((p) => p.t) || [];
-                if (!datasets.length || !labels.length) {
-                    if (status) status.textContent = 'ยังไม่มีข้อมูลกราฟในช่วงเวลานี้';
-                    return;
-                }
-                if (status) status.remove();
-                new Chart(canvas, {
-                    type: 'line',
-                    data: { labels, datasets },
-                    options: {
-                        responsive: true,
-                        animation: false,
-                        plugins: { legend: { labels: { color: '#64748b' } } },
-                        scales: {
-                            x: { ticks: { maxTicksLimit: 12, color: '#94a3b8' } },
-                            y: { beginAtZero: false, ticks: { color: '#94a3b8' } }
-                        }
+        const readings = @json($readings);
+        const sensors = @json($sensors->pluck('name', 'id'));
+        const colors = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'];
+        const datasets = Object.entries(readings).map(([sensorId, data], i) => ({
+            label: sensors[sensorId] || `Sensor ${sensorId}`,
+            data: data.map(r => ({ x: r.recorded_at, y: parseFloat(r.value) })),
+            borderColor: colors[i % colors.length],
+            tension: 0.3,
+            fill: false,
+        }));
+        if (datasets.length) {
+            new Chart(document.getElementById('sensorChart'), {
+                type: 'line',
+                data: { datasets },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: { type: 'category', labels: datasets[0]?.data.map(d => new Date(d.x).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})) },
+                        y: { beginAtZero: false }
                     }
-                });
-            }
-
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
-            script.onload = function () {
-                fetch(chartUrl, { headers: { 'Accept': 'application/json' } })
-                    .then((r) => r.json())
-                    .then(drawChart)
-                    .catch(function () {
-                        if (status) status.textContent = 'โหลดกราฟไม่สำเร็จ';
-                    });
-            };
-            script.onerror = function () {
-                if (status) status.textContent = 'โหลดคลังกราฟไม่สำเร็จ';
-            };
-            document.head.appendChild(script);
-
-            const latestUrl = @json(route('admin.sensors.latest', array_filter(['room_id' => $roomId])));
-            const refreshCards = () => {
-                fetch(latestUrl, { headers: { Accept: 'application/json' } })
-                    .then((r) => r.json())
-                    .then((rows) => {
-                        rows.forEach((row) => {
-                            const box = document.querySelector('[data-sensor-id="' + row.id + '"]');
-                            if (!box) return;
-                            const valueEl = box.querySelector('.js-sensor-value');
-                            const agoEl = box.querySelector('.js-sensor-ago');
-                            if (valueEl && row.value !== null) {
-                                const unit = valueEl.querySelector('span');
-                                valueEl.innerHTML = Number(row.value).toFixed(1) + ' ' + (unit ? unit.outerHTML : '');
-                            }
-                            if (!agoEl) return;
-                            if (row.value === null) {
-                                agoEl.textContent = 'รอข้อมูลจากเซนเซอร์ — เปิด ESP-A ค้างไว้';
-                            } else if (row.online) {
-                                agoEl.textContent = 'อัปเดต ' + row.ago;
-                                agoEl.classList.remove('text-red-500');
-                                agoEl.classList.add('text-gray-400');
-                            } else {
-                                agoEl.textContent = 'ขาดการเชื่อมต่อจาก ESP · อัปเดตล่าสุด ' + row.ago;
-                                agoEl.classList.remove('text-gray-400');
-                                agoEl.classList.add('text-red-500');
-                            }
-                        });
-                    })
-                    .catch(() => {});
-            };
-            setInterval(refreshCards, 15000);
-        })();
+                }
+            });
+        }
     </script>
     @endpush
-    @endif
 </x-app-layout>

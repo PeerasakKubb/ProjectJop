@@ -260,18 +260,12 @@ bool postRaw(const String& path, const String& body,
   Serial.printf("POST %s -> %d\n", path.c_str(), code);
   http.end();
 
-  if (code >= 200 && code < 300) {
-    useRender = USE_HTTPS_DEFAULT;
-    return true;
-  }
+  if (code >= 200 && code < 300) return true;
 
-  // Render ล่มชั่วคราว → ลอง local รอบถัดไป แล้วเด้งกลับ Render อีก
+  // ถ้า Render พัง ให้ลอง local ครั้งถัดไป
   if (useRender && (code < 0 || code >= 500)) {
-    Serial.println("Render fail — next try LOCAL then RENDER again");
+    Serial.println("Render fail — next try LOCAL");
     useRender = false;
-  } else if (!useRender) {
-    Serial.println("Local fail — next try RENDER");
-    useRender = true;
   }
   return false;
 }
@@ -461,8 +455,6 @@ void setup() {
   logln("-----------------");
 }
 
-unsigned long lastRenderRetryMs = 0;
-
 void loop() {
   if (WiFi.status() != WL_CONNECTED) {
     showOverlay("WiFi lost", "Reconnecting");
@@ -470,12 +462,6 @@ void loop() {
     WiFi.reconnect();
     delay(1500);
     return;
-  }
-  // ทุก 60 วินาที บังคับยิง Render อีกครั้ง กันค้างที่เครื่องในแล็บ
-  if (!useRender && millis() - lastRenderRetryMs >= 60000) {
-    lastRenderRetryMs = millis();
-    useRender = true;
-    Serial.println("Retry RENDER host");
   }
   handleRfid();
   if (millis() - lastSensorMs >= SENSOR_MS) {
