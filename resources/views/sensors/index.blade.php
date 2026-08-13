@@ -12,15 +12,15 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 @foreach ($sensors as $sensor)
                     @php $reading = $sensor->latestReading; @endphp
-                    <div class="bg-white rounded-lg shadow p-6">
+                    <div class="bg-white rounded-lg shadow p-6" data-sensor-id="{{ $sensor->id }}">
                         <p class="text-sm text-gray-500">{{ $sensor->room?->name }}</p>
                         <h3 class="font-semibold text-lg">{{ $sensor->name }}</h3>
                         @if ($reading)
-                            <p class="text-4xl font-bold mt-2 {{ $sensor->max_threshold && $reading->value > $sensor->max_threshold ? 'text-red-600' : 'text-indigo-600' }}">
+                            <p class="js-sensor-value text-4xl font-bold mt-2 {{ $sensor->max_threshold && $reading->value > $sensor->max_threshold ? 'text-red-600' : 'text-indigo-600' }}">
                                 {{ number_format($reading->value, 1) }}
                                 <span class="text-lg">{{ $sensor->unit }}</span>
                             </p>
-                            <p class="text-xs text-gray-400 mt-1">อัปเดต {{ $reading->recorded_at->diffForHumans() }}</p>
+                            <p class="js-sensor-ago text-xs text-gray-400 mt-1">อัปเดต {{ $reading->recorded_at->diffForHumans() }}</p>
                         @else
                             <p class="text-gray-400 mt-4">รอข้อมูลจากเซนเซอร์</p>
                         @endif
@@ -87,6 +87,28 @@
                 }
             });
         }
+
+        const latestUrl = @json(route('admin.sensors.latest', array_filter(['room_id' => $roomId])));
+        const tick = () => {
+            fetch(latestUrl, { headers: { Accept: 'application/json' } })
+                .then((r) => r.json())
+                .then((rows) => {
+                    rows.forEach((row) => {
+                        const box = document.querySelector('[data-sensor-id="' + row.id + '"]');
+                        if (!box) return;
+                        const valueEl = box.querySelector('.js-sensor-value');
+                        const agoEl = box.querySelector('.js-sensor-ago');
+                        if (valueEl && row.value !== null) {
+                            const unit = valueEl.querySelector('span');
+                            valueEl.innerHTML = Number(row.value).toFixed(1) + ' ' + (unit ? unit.outerHTML : '');
+                        }
+                        if (agoEl && row.ago) agoEl.textContent = 'อัปเดต ' + row.ago;
+                    });
+                })
+                .catch(() => {});
+        };
+        tick();
+        setInterval(tick, 5000);
     </script>
     @endpush
 </x-app-layout>

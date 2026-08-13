@@ -67,6 +67,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(
     Route::post('/devices/{device}/toggle', [DeviceController::class, 'toggle'])->name('devices.toggle');
 
     Route::get('/sensors', [SensorController::class, 'index'])->name('sensors.index');
+    Route::get('/sensors/latest', [SensorController::class, 'latest'])->name('sensors.latest');
     Route::post('/sensors', [SensorController::class, 'store'])->name('sensors.store');
 
     Route::middleware('role:admin,teacher')->group(function () {

@@ -52,7 +52,7 @@ U8G2* oled = nullptr;
 DHT dht(PIN_DHT, DHT11);
 MFRC522 mfrc522(PIN_RFID_SS, PIN_RFID_RST);
 
-const unsigned long SENSOR_MS = 15000;
+const unsigned long SENSOR_MS = 5000;
 const unsigned long UI_MS     = 1000;
 const unsigned long RFID_COOLDOWN_MS = 2500;
 
@@ -277,12 +277,12 @@ bool postReading(const char* key, float value) {
 }
 
 bool readDht(float& t, float& h) {
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 3; i++) {
     h = dht.readHumidity();
-    delay(60);
+    delay(40);
     t = dht.readTemperature();
     if (!isnan(t) && !isnan(h) && t >= 0 && t <= 60 && h >= 0 && h <= 100) return true;
-    delay(1800);
+    delay(900);
   }
   return false;
 }

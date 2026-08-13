@@ -31,6 +31,25 @@ class SensorController extends Controller
         return view('sensors.index', compact('sensors', 'rooms', 'readings', 'roomId', 'hours'));
     }
 
+    public function latest(Request $request)
+    {
+        $sensors = Sensor::with('latestReading')
+            ->when($request->get('room_id'), fn ($q) => $q->where('room_id', $request->get('room_id')))
+            ->get();
+
+        return response()->json($sensors->map(function (Sensor $sensor) {
+            $reading = $sensor->latestReading;
+            $age = $reading?->recorded_at?->diffInSeconds(now());
+
+            return [
+                'id' => $sensor->id,
+                'value' => $reading ? round((float) $reading->value, 1) : null,
+                'unit' => $sensor->unit,
+                'ago' => $age === null ? null : ($age <= 5 ? 'เมื่อกี้' : $reading->recorded_at->locale('th')->diffForHumans()),
+            ];
+        }));
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
