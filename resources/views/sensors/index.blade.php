@@ -11,18 +11,24 @@
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 @foreach ($sensors as $sensor)
-                    @php $reading = $sensor->latestReading; @endphp
-                    <div class="bg-white rounded-lg shadow p-6">
+                    @php
+                        $reading = $sensor->latestReading;
+                        $age = $reading?->recorded_at?->diffInSeconds(now());
+                        $online = $age !== null && $age <= 90;
+                    @endphp
+                    <div class="bg-white rounded-lg shadow p-6" data-sensor-id="{{ $sensor->id }}">
                         <p class="text-sm text-gray-500">{{ $sensor->room?->name }}</p>
                         <h3 class="font-semibold text-lg">{{ $sensor->name }}</h3>
                         @if ($reading)
-                            <p class="text-4xl font-bold mt-2 {{ $sensor->max_threshold && $reading->value > $sensor->max_threshold ? 'text-red-600' : 'text-indigo-600' }}">
+                            <p class="js-sensor-value text-4xl font-bold mt-2 {{ $sensor->max_threshold && $reading->value > $sensor->max_threshold ? 'text-red-600' : 'text-indigo-600' }}">
                                 {{ number_format($reading->value, 1) }}
                                 <span class="text-lg">{{ $sensor->unit }}</span>
                             </p>
-                            <p class="text-xs text-gray-400 mt-1">อัปเดต {{ $reading->recorded_at->diffForHumans() }}</p>
+                            <p class="js-sensor-ago text-xs mt-1 {{ $online ? 'text-gray-400' : 'text-red-500' }}">
+                                {{ $online ? 'อัปเดต '.$reading->recorded_at->locale('th')->diffForHumans() : 'ขาดการเชื่อมต่อจาก ESP · อัปเดตล่าสุด '.$reading->recorded_at->locale('th')->diffForHumans() }}
+                            </p>
                         @else
-                            <p class="text-gray-400 mt-4">รอข้อมูลจากเซนเซอร์</p>
+                            <p class="js-sensor-ago text-gray-400 mt-4">รอข้อมูลจากเซนเซอร์ — เปิด ESP-A ค้างไว้</p>
                         @endif
                     </div>
                 @endforeach
@@ -115,6 +121,38 @@
                 if (status) status.textContent = 'โหลดคลังกราฟไม่สำเร็จ';
             };
             document.head.appendChild(script);
+
+            const latestUrl = @json(route('admin.sensors.latest', array_filter(['room_id' => $roomId])));
+            const refreshCards = () => {
+                fetch(latestUrl, { headers: { Accept: 'application/json' } })
+                    .then((r) => r.json())
+                    .then((rows) => {
+                        rows.forEach((row) => {
+                            const box = document.querySelector('[data-sensor-id="' + row.id + '"]');
+                            if (!box) return;
+                            const valueEl = box.querySelector('.js-sensor-value');
+                            const agoEl = box.querySelector('.js-sensor-ago');
+                            if (valueEl && row.value !== null) {
+                                const unit = valueEl.querySelector('span');
+                                valueEl.innerHTML = Number(row.value).toFixed(1) + ' ' + (unit ? unit.outerHTML : '');
+                            }
+                            if (!agoEl) return;
+                            if (row.value === null) {
+                                agoEl.textContent = 'รอข้อมูลจากเซนเซอร์ — เปิด ESP-A ค้างไว้';
+                            } else if (row.online) {
+                                agoEl.textContent = 'อัปเดต ' + row.ago;
+                                agoEl.classList.remove('text-red-500');
+                                agoEl.classList.add('text-gray-400');
+                            } else {
+                                agoEl.textContent = 'ขาดการเชื่อมต่อจาก ESP · อัปเดตล่าสุด ' + row.ago;
+                                agoEl.classList.remove('text-gray-400');
+                                agoEl.classList.add('text-red-500');
+                            }
+                        });
+                    })
+                    .catch(() => {});
+            };
+            setInterval(refreshCards, 15000);
         })();
     </script>
     @endpush

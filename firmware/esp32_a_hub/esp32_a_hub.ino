@@ -260,12 +260,18 @@ bool postRaw(const String& path, const String& body,
   Serial.printf("POST %s -> %d\n", path.c_str(), code);
   http.end();
 
-  if (code >= 200 && code < 300) return true;
+  if (code >= 200 && code < 300) {
+    useRender = USE_HTTPS_DEFAULT;
+    return true;
+  }
 
-  // ถ้า Render พัง ให้ลอง local ครั้งถัดไป
+  // Render ล่มชั่วคราว → ลอง local รอบถัดไป แล้วเด้งกลับ Render อีก
   if (useRender && (code < 0 || code >= 500)) {
-    Serial.println("Render fail — next try LOCAL");
+    Serial.println("Render fail — next try LOCAL then RENDER again");
     useRender = false;
+  } else if (!useRender) {
+    Serial.println("Local fail — next try RENDER");
+    useRender = true;
   }
   return false;
 }
@@ -366,6 +372,7 @@ bool initRfid() {
 
 void handleRfid() {
   if (!rfidOk) return;
+  if (millis() < overlayUntil) return; // อย่าอ่านบัตรใหม่ระหว่างโชว์ข้อความ/UID
   if (millis() - lastRfidMs < RFID_COOLDOWN_MS) return;
   if (!mfrc522.PICC_IsNewCardPresent() || !mfrc522.PICC_ReadCardSerial()) return;
   lastRfidMs = millis();
@@ -378,14 +385,30 @@ void handleRfid() {
   bool httpOk = postRaw("/api/rfid/scan", body, "X-API-Key", RFID_API_KEY, resp);
   mfrc522.PICC_HaltA();
   mfrc522.PCD_StopCrypto1();
+
+  bool unknownCard = (!httpOk) &&
+      ((resp.indexOf("success") >= 0 && resp.indexOf("false") >= 0) ||
+       resp.indexOf("ไม่พบ") >= 0);
+
   if (!httpOk) {
-    if (resp.indexOf("success") >= 0 && resp.indexOf("false") >= 0)
-      showOverlay("Unknown card", "Register in Admin");
-    else
-      showOverlay("Server error", "Check Laravel");
-    drawUi();
+    if (unknownCard) {
+      // 1) บอกก่อนว่าไม่รู้จักบัตร
+      showOverlay("Access Denied", "Unknown card", 2500);
+      drawUi();
+      delay(2500);
+      // 2) แล้วค้างเลขบัตร 8 วินาที ให้คัดลอกลงทะเบียน
+      char uidLine[22];
+      snprintf(uidLine, sizeof(uidLine), "%.21s", uid.c_str());
+      showOverlay("Card UID", uidLine, 8000);
+      drawUi();
+      lastRfidMs = millis(); // กันอ่านซ้ำระหว่างโชว์ UID
+    } else {
+      showOverlay("Server error", "Check network", 3500);
+      drawUi();
+    }
     return;
   }
+
   String name = jsonStr(resp, "name");
   String status = jsonStr(resp, "status");
   bool dup = jsonBoolTrue(resp, "duplicate");
@@ -438,6 +461,8 @@ void setup() {
   logln("-----------------");
 }
 
+unsigned long lastRenderRetryMs = 0;
+
 void loop() {
   if (WiFi.status() != WL_CONNECTED) {
     showOverlay("WiFi lost", "Reconnecting");
@@ -445,6 +470,12 @@ void loop() {
     WiFi.reconnect();
     delay(1500);
     return;
+  }
+  // ทุก 60 วินาที บังคับยิง Render อีกครั้ง กันค้างที่เครื่องในแล็บ
+  if (!useRender && millis() - lastRenderRetryMs >= 60000) {
+    lastRenderRetryMs = millis();
+    useRender = true;
+    Serial.println("Retry RENDER host");
   }
   handleRfid();
   if (millis() - lastSensorMs >= SENSOR_MS) {

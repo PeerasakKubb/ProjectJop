@@ -94,20 +94,26 @@
             <x-page-card title="สภาพแวดล้อมห้องเรียน" :action="route('admin.sensors.index')" actionLabel="ดูกราฟ">
                 <div class="space-y-2">
                     @forelse ($sensors as $sensor)
-                        @php $reading = $sensor->latestReading; @endphp
-                        <div class="flex justify-between items-center p-4 bg-white/5 border border-white/10">
+                        @php
+                            $reading = $sensor->latestReading;
+                            $age = $reading?->recorded_at?->diffInSeconds(now());
+                            $online = $age !== null && $age <= 90;
+                        @endphp
+                        <div class="flex justify-between items-center p-4 bg-white/5 border border-white/10" data-sensor-id="{{ $sensor->id }}">
                             <div>
                                 <p class="font-semibold text-sm text-white">{{ $sensor->name }}</p>
                                 <p class="text-xs text-slate-500">{{ $sensor->room?->name }} · {{ $sensor->type }}</p>
                             </div>
                             <div class="text-right">
                                 @if ($reading)
-                                    <p class="text-xl font-bold {{ $sensor->max_threshold && $reading->value > $sensor->max_threshold ? 'text-rose-400' : 'text-gold' }}">
+                                    <p class="js-sensor-value text-xl font-bold {{ $sensor->max_threshold && $reading->value > $sensor->max_threshold ? 'text-rose-400' : 'text-gold' }}">
                                         {{ number_format($reading->value, 1) }} <span class="text-sm font-normal">{{ $sensor->unit }}</span>
                                     </p>
-                                    <p class="text-xs text-slate-400">{{ $reading->recorded_at->diffForHumans() }}</p>
+                                    <p class="js-sensor-ago text-xs {{ $online ? 'text-slate-400' : 'text-rose-400' }}">
+                                        {{ $online ? 'อัปเดต '.$reading->recorded_at->locale('th')->diffForHumans() : 'ขาดการเชื่อมต่อจาก ESP · '.$reading->recorded_at->locale('th')->diffForHumans() }}
+                                    </p>
                                 @else
-                                    <p class="text-slate-400 text-sm">ไม่มีข้อมูล</p>
+                                    <p class="js-sensor-ago text-slate-400 text-sm">รอข้อมูลจาก ESP-A</p>
                                 @endif
                             </div>
                         </div>
@@ -194,6 +200,36 @@
                 }
             });
         }
+
+        const refreshSensors = () => {
+            fetch('{{ route('admin.sensors.latest') }}', { headers: { Accept: 'application/json' } })
+                .then(r => r.json())
+                .then(rows => {
+                    rows.forEach(row => {
+                        const box = document.querySelector('[data-sensor-id="' + row.id + '"]');
+                        if (!box) return;
+                        const valueEl = box.querySelector('.js-sensor-value');
+                        const agoEl = box.querySelector('.js-sensor-ago');
+                        if (valueEl && row.value !== null) {
+                            const unit = valueEl.querySelector('span');
+                            valueEl.innerHTML = Number(row.value).toFixed(1) + ' ' + (unit ? unit.outerHTML : '');
+                        }
+                        if (!agoEl) return;
+                        if (row.online) {
+                            agoEl.textContent = 'อัปเดต ' + row.ago;
+                            agoEl.classList.remove('text-rose-400');
+                            agoEl.classList.add('text-slate-400');
+                        } else {
+                            agoEl.textContent = 'ขาดการเชื่อมต่อจาก ESP · ' + (row.ago || 'ยังไม่มีข้อมูล');
+                            agoEl.classList.remove('text-slate-400');
+                            agoEl.classList.add('text-rose-400');
+                        }
+                    });
+                })
+                .catch(() => {});
+        };
+        refreshSensors();
+        setInterval(refreshSensors, 15000);
 
         setInterval(() => {
             fetch('{{ route('admin.attendance.today') }}')
