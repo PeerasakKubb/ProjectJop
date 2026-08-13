@@ -13,7 +13,7 @@ class SensorController extends Controller
     public function index(Request $request)
     {
         $roomId = $request->get('room_id');
-        $hours = $request->get('hours', 24);
+        $hours = (int) $request->get('hours', 24);
 
         $sensors = Sensor::with(['room', 'latestReading'])
             ->when($roomId, fn ($q) => $q->where('room_id', $roomId))
@@ -21,14 +21,38 @@ class SensorController extends Controller
 
         $rooms = Room::where('is_active', true)->get();
 
-        $readings = SensorReading::with('sensor')
-            ->when($roomId, fn ($q) => $q->whereHas('sensor', fn ($sq) => $sq->where('room_id', $roomId)))
-            ->where('recorded_at', '>=', Carbon::now()->subHours($hours))
-            ->orderBy('recorded_at')
-            ->get()
-            ->groupBy('sensor_id');
+        return view('sensors.index', compact('sensors', 'rooms', 'roomId', 'hours'));
+    }
 
-        return view('sensors.index', compact('sensors', 'rooms', 'readings', 'roomId', 'hours'));
+    public function chart(Request $request)
+    {
+        $roomId = $request->get('room_id');
+        $hours = min(max((int) $request->get('hours', 24), 1), 168);
+        $since = Carbon::now()->subHours($hours);
+
+        $sensors = Sensor::query()
+            ->when($roomId, fn ($q) => $q->where('room_id', $roomId))
+            ->get(['id', 'name']);
+
+        $series = [];
+        foreach ($sensors as $sensor) {
+            $rows = SensorReading::query()
+                ->where('sensor_id', $sensor->id)
+                ->where('recorded_at', '>=', $since)
+                ->orderByDesc('recorded_at')
+                ->limit(120)
+                ->get(['value', 'recorded_at']);
+
+            $series[$sensor->id] = $rows->reverse()->values()->map(fn ($row) => [
+                't' => $row->recorded_at->format('H:i'),
+                'v' => (float) $row->value,
+            ]);
+        }
+
+        return response()->json([
+            'names' => $sensors->pluck('name', 'id'),
+            'series' => $series,
+        ]);
     }
 
     public function store(Request $request)

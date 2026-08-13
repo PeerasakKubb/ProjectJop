@@ -32,24 +32,28 @@ Route::get('/courses/{course}', [FrontController::class, 'courseShow'])->name('c
 
 /*
 |--------------------------------------------------------------------------
-| Redirect path เก่า → /admin
+| Redirect path เก่า → /main
 |--------------------------------------------------------------------------
 */
-Route::redirect('/dashboard', '/admin/dashboard');
-Route::redirect('/architecture', '/admin/architecture');
-Route::redirect('/attendance', '/admin/attendance');
-Route::redirect('/devices', '/admin/devices');
-Route::redirect('/sensors', '/admin/sensors');
-Route::redirect('/rfid-cards', '/admin/rfid-cards');
-Route::redirect('/notifications', '/admin/notifications');
-Route::redirect('/profile', '/admin/profile');
+Route::redirect('/dashboard', '/main/dashboard');
+Route::redirect('/architecture', '/main/architecture');
+Route::redirect('/attendance', '/main/attendance');
+Route::redirect('/devices', '/main/devices');
+Route::redirect('/sensors', '/main/sensors');
+Route::redirect('/rfid-cards', '/main/rfid-cards');
+Route::redirect('/notifications', '/main/notifications');
+Route::redirect('/profile', '/main/profile');
+Route::redirect('/admin', '/main/dashboard');
+Route::get('/admin/{path}', function (string $path) {
+    return redirect('/main/'.$path, 301);
+})->where('path', '.*');
 
 /*
 |--------------------------------------------------------------------------
-| หลังบ้าน (Admin / Backoffice)
+| หลังบ้าน (/main)
 |--------------------------------------------------------------------------
 */
-Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(function () {
+Route::prefix('main')->name('admin.')->middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/architecture', [ArchitectureController::class, 'index'])->name('architecture');
 
@@ -63,6 +67,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(
     Route::post('/devices/{device}/toggle', [DeviceController::class, 'toggle'])->name('devices.toggle');
 
     Route::get('/sensors', [SensorController::class, 'index'])->name('sensors.index');
+    Route::get('/sensors/chart', [SensorController::class, 'chart'])->name('sensors.chart');
     Route::post('/sensors', [SensorController::class, 'store'])->name('sensors.store');
 
     Route::middleware('role:admin,teacher')->group(function () {

@@ -19,7 +19,7 @@
                         <strong class="text-white">หน้าบ้าน</strong> — โชว์คอร์ส ฟีเจอร์ ข้อมูลโรงเรียน (ไม่ต้อง login)
                     </li>
                     <li class="p-3 bg-white/5">
-                        <strong class="text-white">หลังบ้าน (/admin)</strong> — Admin แก้ไขเว็บ จัดการผู้ใช้ คอร์ส IoT RFID
+                        <strong class="text-white">หลังบ้าน (/main)</strong> — Admin แก้ไขเว็บ จัดการผู้ใช้ คอร์ส IoT RFID
                     </li>
                 </ul>
             </div>

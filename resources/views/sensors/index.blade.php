@@ -31,6 +31,7 @@
             @if ($sensors->isNotEmpty())
                 <div class="bg-white rounded-lg shadow p-6">
                     <h3 class="font-semibold mb-4">กราฟข้อมูล {{ $hours }} ชั่วโมงล่าสุด</h3>
+                    <p id="sensorChartStatus" class="text-sm text-gray-400 mb-2">กำลังโหลดกราฟ…</p>
                     <canvas id="sensorChart" height="100"></canvas>
                 </div>
             @endif
@@ -61,32 +62,61 @@
         </div>
     </div>
 
+    @if ($sensors->isNotEmpty())
     @push('scripts')
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        const readings = @json($readings);
-        const sensors = @json($sensors->pluck('name', 'id'));
-        const colors = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'];
-        const datasets = Object.entries(readings).map(([sensorId, data], i) => ({
-            label: sensors[sensorId] || `Sensor ${sensorId}`,
-            data: data.map(r => ({ x: r.recorded_at, y: parseFloat(r.value) })),
-            borderColor: colors[i % colors.length],
-            tension: 0.3,
-            fill: false,
-        }));
-        if (datasets.length) {
-            new Chart(document.getElementById('sensorChart'), {
-                type: 'line',
-                data: { datasets },
-                options: {
-                    responsive: true,
-                    scales: {
-                        x: { type: 'category', labels: datasets[0]?.data.map(d => new Date(d.x).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})) },
-                        y: { beginAtZero: false }
-                    }
+        (function () {
+            const status = document.getElementById('sensorChartStatus');
+            const canvas = document.getElementById('sensorChart');
+            const chartUrl = @json(route('admin.sensors.chart', array_filter(['room_id' => $roomId, 'hours' => $hours])));
+            const colors = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'];
+
+            function drawChart(payload) {
+                const datasets = Object.entries(payload.series || {}).map(([id, points], i) => ({
+                    label: payload.names[id] || ('Sensor ' + id),
+                    data: (points || []).map((p) => p.v),
+                    borderColor: colors[i % colors.length],
+                    tension: 0.3,
+                    fill: false,
+                    pointRadius: 0,
+                }));
+                const labels = Object.values(payload.series || [])[0]?.map((p) => p.t) || [];
+                if (!datasets.length || !labels.length) {
+                    if (status) status.textContent = 'ยังไม่มีข้อมูลกราฟในช่วงเวลานี้';
+                    return;
                 }
-            });
-        }
+                if (status) status.remove();
+                new Chart(canvas, {
+                    type: 'line',
+                    data: { labels, datasets },
+                    options: {
+                        responsive: true,
+                        animation: false,
+                        plugins: { legend: { labels: { color: '#64748b' } } },
+                        scales: {
+                            x: { ticks: { maxTicksLimit: 12, color: '#94a3b8' } },
+                            y: { beginAtZero: false, ticks: { color: '#94a3b8' } }
+                        }
+                    }
+                });
+            }
+
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+            script.onload = function () {
+                fetch(chartUrl, { headers: { 'Accept': 'application/json' } })
+                    .then((r) => r.json())
+                    .then(drawChart)
+                    .catch(function () {
+                        if (status) status.textContent = 'โหลดกราฟไม่สำเร็จ';
+                    });
+            };
+            script.onerror = function () {
+                if (status) status.textContent = 'โหลดคลังกราฟไม่สำเร็จ';
+            };
+            document.head.appendChild(script);
+        })();
     </script>
     @endpush
+    @endif
 </x-app-layout>
