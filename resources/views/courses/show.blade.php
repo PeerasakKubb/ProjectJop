@@ -55,8 +55,8 @@
         <div class="app-card p-6">
             <p class="text-slate-300 leading-relaxed mb-4">{{ $course->description }}</p>
             <div class="flex flex-wrap gap-4 text-sm text-slate-500 mb-4">
-                <span>👨‍🏫 {{ $course->teacher->name }}</span>
-                <span class="font-bold text-violet-400 text-base">{{ $course->price == 0 ? 'ฟรี' : number_format($course->price).' บาท' }}</span>
+                <span>{{ $course->teacher->name }}</span>
+                <span class="font-bold text-gold text-base">{{ $course->price == 0 ? 'ฟรี' : number_format($course->price).' บาท' }}</span>
                 @if (! $course->is_published)
                     <span class="badge-warning">ยังไม่เผยแพร่</span>
                 @endif

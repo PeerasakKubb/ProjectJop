@@ -4,9 +4,9 @@
 
 @section('content')
     <section class="max-w-6xl mx-auto px-6 pt-16 pb-10 text-center">
-        <p class="text-xs font-bold uppercase tracking-widest text-cyan-400 mb-2">Features</p>
-        <h1 class="text-4xl sm:text-5xl font-black text-white mb-4">
-            ฟีเจอร์<span class="text-gradient">ระบบ</span>
+        <p class="text-xs font-bold uppercase tracking-widest text-gold mb-2">Features</p>
+        <h1 class="text-4xl sm:text-5xl font-semibold text-white mb-4">
+            ฟีเจอร์ระบบ
         </h1>
         <p class="text-slate-400 max-w-2xl mx-auto">
             หน้าบ้านนี้แสดงภาพรวมโมดูล — การใช้งานจริงอยู่ที่หลังบ้านหลังเข้าสู่ระบบ
@@ -23,13 +23,12 @@
                 @if (($module['key'] ?? '') === 'architecture')
                     @continue
                 @endif
-                <div class="app-card p-5 flex gap-4">
-                    <span class="text-3xl">{{ $module['icon'] }}</span>
+                <div class="app-card p-5">
                     <div>
                         <p class="text-[10px] uppercase tracking-widest text-slate-500 mb-1">
                             {{ $module['layer_meta']['label'] ?? '' }}
                         </p>
-                        <h3 class="font-bold text-white">{{ $module['label'] }}</h3>
+                        <h3 class="font-semibold text-white">{{ $module['label'] }}</h3>
                         <p class="text-sm text-slate-400 mt-1">{{ $module['description'] }}</p>
                     </div>
                 </div>

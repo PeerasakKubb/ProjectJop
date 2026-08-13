@@ -2,8 +2,8 @@
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-                <p class="text-xs font-bold uppercase tracking-widest text-cyan-400 mb-1">RFID System</p>
-                <h2 class="text-3xl font-black text-white">เช็ค<span class="text-gradient">ชื่อ</span></h2>
+                <p class="text-xs font-bold uppercase tracking-widest text-gold mb-1">RFID System</p>
+                <h2 class="text-3xl font-semibold text-white">เช็คชื่อ</h2>
             </div>
             <a href="{{ route('admin.attendance.export', request()->only(['date', 'room_id'])) }}" class="btn-brand">
                 Export CSV
@@ -14,9 +14,9 @@
     <div class="py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                <x-stat-card label="เข้าเรียนวันนี้" :value="$stats['total']" icon="👥" color="brand" />
-                <x-stat-card label="ตรงเวลา" :value="$stats['present']" icon="✅" color="green" />
-                <x-stat-card label="มาสาย" :value="$stats['late']" icon="⏰" color="amber" />
+                <x-stat-card label="เข้าเรียนวันนี้" :value="$stats['total']" color="brand" />
+                <x-stat-card label="ตรงเวลา" :value="$stats['present']" color="green" />
+                <x-stat-card label="มาสาย" :value="$stats['late']" color="amber" />
             </div>
 
             <div class="app-card p-6 mb-6">

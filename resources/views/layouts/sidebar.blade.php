@@ -9,7 +9,6 @@
     class="app-sidebar"
     :class="{ 'app-sidebar--open': open }"
 >
-    {{-- Mobile toggle --}}
     <button
         type="button"
         @click="open = !open"
@@ -22,30 +21,27 @@
     </button>
 
     <div class="app-sidebar__panel" @click.outside="open = false">
-        {{-- Brand --}}
         <div class="app-sidebar__brand">
-            <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 group">
-                <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-sm font-black shadow-glow group-hover:scale-105 transition-transform"
-                     style="background: linear-gradient(135deg, #7c3aed, #22d3ee);">
+            <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3">
+                <div class="w-10 h-10 flex items-center justify-center text-gold text-sm font-bold border border-gold">
                     SC
                 </div>
                 <div class="min-w-0">
-                    <p class="font-bold text-white text-sm leading-tight">Smart Classroom</p>
-                    <p class="text-[10px] font-bold uppercase tracking-widest text-violet-300">หลังบ้าน · Admin</p>
+                    <p class="font-semibold text-white text-sm leading-tight">Smart Classroom</p>
+                    <p class="text-[11px] font-semibold uppercase tracking-wider text-gold">หลังบ้าน · Admin</p>
                 </div>
             </a>
-            <a href="{{ route('home') }}" class="mt-3 flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-slate-500 hover:text-cyan-400 hover:bg-white/5 transition-colors">
+            <a href="{{ route('home') }}" class="mt-3 flex items-center gap-2 px-2 py-1.5 text-xs text-slate-500 hover:text-gold">
                 ← กลับหน้าบ้าน
             </a>
         </div>
 
-        {{-- Layer groups --}}
         <nav class="app-sidebar__nav">
             @foreach ($grouped as $layerKey => $group)
                 @php $layer = $group['meta']; @endphp
                 <div class="app-sidebar__group" data-layer="{{ $layerKey }}">
                     <div class="app-sidebar__group-label">
-                        <span class="app-sidebar__layer-dot app-sidebar__layer-dot--{{ $layer['color'] ?? 'violet' }}"></span>
+                        <span class="app-sidebar__layer-dot"></span>
                         <span>{{ $layer['label'] }}</span>
                     </div>
                     <p class="app-sidebar__group-sub">{{ $layer['subtitle'] }}</p>
@@ -61,7 +57,6 @@
             @endforeach
         </nav>
 
-        {{-- User footer --}}
         <div class="app-sidebar__footer">
             @if (auth()->user()->isAdmin() || auth()->user()->isTeacher())
                 @php
@@ -70,7 +65,7 @@
                         : 0;
                 @endphp
                 <a href="{{ route('admin.notifications.index') }}" class="app-sidebar__alert" title="การแจ้งเตือน">
-                    <span>🔔 แจ้งเตือน</span>
+                    <span>แจ้งเตือน</span>
                     @if ($unreadNotifications > 0)
                         <span class="badge-danger">{{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}</span>
                     @endif
@@ -78,8 +73,7 @@
             @endif
 
             <a href="{{ route('admin.profile.edit') }}" class="app-sidebar__user">
-                <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ring-2 ring-violet-500/40"
-                     style="background: linear-gradient(135deg, #8b5cf6, #22d3ee);">
+                <div class="gov-initials w-8 h-8 flex items-center justify-center text-xs font-bold">
                     {{ mb_substr(auth()->user()->name, 0, 1) }}
                 </div>
                 <div class="min-w-0 flex-1">

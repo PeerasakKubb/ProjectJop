@@ -45,9 +45,9 @@
             </div>
 
             @if (auth()->user()->canManageCourse($exam->course))
-                <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg shadow p-6">
-                    <h3 class="font-semibold text-lg text-purple-800 mb-1">🤖 สร้างคำถามเพิ่มด้วย AI</h3>
-                    <p class="text-sm text-purple-600 mb-4">กดได้เรื่อยๆ · AI: {{ app(\App\Services\AiCurriculumService::class)->currentProvider() }}</p>
+                <div class="app-card p-6">
+                    <h3 class="font-semibold text-lg text-white mb-1">สร้างคำถามเพิ่มด้วย AI</h3>
+                    <p class="text-sm text-slate-400 mb-4">กดได้เรื่อยๆ · AI: {{ app(\App\Services\AiCurriculumService::class)->currentProvider() }}</p>
                     <form method="POST" action="{{ route('admin.ai.exam.append', $exam) }}" class="flex flex-wrap gap-3 items-end">
                         @csrf
                         <div class="flex-1 min-w-[200px]">

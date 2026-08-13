@@ -8,7 +8,7 @@
         <title>{{ config('app.name', 'Smart Classroom') }} · หลังบ้าน</title>
 
         <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700,800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.bunny.net/css?family=sarabun:300,400,500,600,700&display=swap" rel="stylesheet" />
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
@@ -28,13 +28,13 @@
 
                     @isset($header)
                         <header class="page-header">
-                            <div class="page-content py-5 animate-fade-in">
+                            <div class="page-content py-5">
                                 {{ $header }}
                             </div>
                         </header>
                     @endisset
 
-                    <main class="animate-fade-in">
+                    <main>
                         {{ $slot }}
                     </main>
                 </div>

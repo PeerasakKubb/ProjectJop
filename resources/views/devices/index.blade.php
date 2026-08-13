@@ -2,19 +2,19 @@
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-                <p class="text-xs font-bold uppercase tracking-widest text-cyan-400 mb-1">IoT Control</p>
-                <h2 class="text-3xl font-black text-white">ควบคุม<span class="text-gradient">หลอดไฟ</span></h2>
+                <p class="text-xs font-bold uppercase tracking-widest text-gold mb-1">IoT Control</p>
+                <h2 class="text-3xl font-semibold text-white">ควบคุมหลอดไฟ</h2>
             </div>
             <div class="flex flex-wrap gap-2">
                 <form method="POST" action="{{ route('admin.devices.turn-on-all') }}">
                     @csrf
-                    <button type="submit" class="px-5 py-2.5 rounded-xl font-semibold text-white bg-emerald-500 hover:bg-emerald-600 shadow-md shadow-emerald-500/25 transition-all">
+                    <button type="submit" class="px-5 py-2 font-semibold text-white bg-emerald-700 hover:bg-emerald-800">
                         เปิดไฟรวม
                     </button>
                 </form>
                 <form method="POST" action="{{ route('admin.devices.turn-off-all') }}">
                     @csrf
-                    <button type="submit" class="px-5 py-2.5 rounded-xl font-semibold text-white bg-rose-500 hover:bg-rose-600 shadow-md shadow-rose-500/25 transition-all">
+                    <button type="submit" class="px-5 py-2 font-semibold text-white bg-rose-800 hover:bg-rose-900">
                         ปิดไฟรวม
                     </button>
                 </form>

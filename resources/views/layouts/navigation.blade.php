@@ -2,12 +2,11 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-14 sm:h-16">
             <div class="flex items-center gap-6 lg:gap-8">
-                <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2.5 group">
-                    <div class="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-black shadow-glow group-hover:scale-105 transition-transform"
-                         style="background: linear-gradient(135deg, #7c3aed, #22d3ee);">
+                <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 flex items-center justify-center text-xs font-bold bg-brand-600 text-gold border border-gold">
                         SC
                     </div>
-                    <span class="font-bold text-white text-lg hidden sm:block tracking-tight">Smart <span class="text-gradient">Classroom</span></span>
+                    <span class="font-semibold text-white text-lg hidden sm:block">Smart Classroom</span>
                 </a>
 
                 <div class="hidden lg:flex items-center gap-0.5">
@@ -26,12 +25,12 @@
             <div class="hidden sm:flex sm:items-center gap-2">
                 @if (auth()->user()->isAdmin() || auth()->user()->isTeacher())
                     @php $unreadNotifications = \App\Models\SystemNotification::where('is_read', false)->count(); @endphp
-                    <a href="{{ route('admin.notifications.index') }}" class="relative p-2 rounded-xl text-slate-400 hover:text-cyan-400 hover:bg-white/5 transition-all" title="การแจ้งเตือน">
+                    <a href="{{ route('admin.notifications.index') }}" class="relative p-2 text-slate-400 hover:text-gold" title="การแจ้งเตือน">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                         </svg>
                         @if ($unreadNotifications > 0)
-                            <span class="absolute -top-0.5 -right-0.5 bg-gradient-to-r from-pink-500 to-violet-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 animate-pulse">
+                            <span class="absolute -top-0.5 -right-0.5 bg-rose-700 text-white text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center px-1">
                                 {{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}
                             </span>
                         @endif
@@ -42,9 +41,8 @@
 
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
-                        <button class="flex items-center gap-2 pl-1 pr-2 py-1 rounded-xl hover:bg-white/5 transition-colors">
-                            <div class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold ring-2 ring-violet-500/50"
-                                 style="background: linear-gradient(135deg, #8b5cf6, #22d3ee);">
+                        <button class="flex items-center gap-2 pl-1 pr-2 py-1 hover:bg-white/5">
+                            <div class="gov-initials w-8 h-8 flex items-center justify-center text-xs font-bold">
                                 {{ mb_substr(Auth::user()->name, 0, 1) }}
                             </div>
                             <span class="text-sm font-medium text-slate-300 max-w-[100px] truncate hidden md:block">{{ Auth::user()->name }}</span>

@@ -11,8 +11,8 @@
     <div class="py-8">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8 space-y-4">
             @if (auth()->user()->canManageCourse($course))
-                <div class="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-6">
-                    <h3 class="font-semibold text-purple-800 mb-3">🤖 สร้างข้อสอบด้วย AI</h3>
+                <div class="app-card p-6">
+                    <h3 class="font-semibold text-white mb-3">สร้างข้อสอบด้วย AI</h3>
                     <form method="POST" action="{{ route('admin.ai.exam', $course) }}" class="flex flex-wrap gap-3 items-end">
                         @csrf
                         <div class="flex-1 min-w-[200px]">

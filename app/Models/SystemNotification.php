@@ -21,22 +21,30 @@ class SystemNotification extends Model
 
     public function icon(): string
     {
+        return $this->typeLabel();
+    }
+
+    public function typeLabel(): string
+    {
         return match ($this->type) {
-            'temperature', 'humidity', 'air_quality' => '🌡️',
-            'absence' => '📋',
-            'device' => '💡',
-            'attendance' => '✅',
-            default => '🔔',
+            'temperature' => 'อุณหภูมิ',
+            'humidity' => 'ความชื้น',
+            'air_quality' => 'คุณภาพอากาศ',
+            'absence' => 'ขาดเรียน',
+            'device' => 'อุปกรณ์',
+            'attendance' => 'เช็คชื่อ',
+            default => 'ระบบ',
         };
     }
 
     public function badgeColor(): string
     {
         return match ($this->type) {
-            'temperature', 'humidity', 'air_quality' => 'bg-red-100 text-red-700',
-            'absence' => 'bg-yellow-100 text-yellow-800',
-            'device' => 'bg-orange-100 text-orange-800',
-            default => 'bg-blue-100 text-blue-700',
+            'temperature', 'humidity', 'air_quality' => 'badge-danger',
+            'absence' => 'badge-warning',
+            'device' => 'badge-warning',
+            'attendance' => 'badge-success',
+            default => 'badge-brand',
         };
     }
 }

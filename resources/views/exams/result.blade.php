@@ -19,7 +19,7 @@
                         {{ $answer?->is_correct ? '✓ ถูกต้อง' : '✗ ไม่ถูกต้อง' }}
                     </p>
                     @if ($answer?->ai_feedback)
-                        <p class="text-sm text-indigo-600 mt-2 bg-indigo-50 p-3 rounded">🤖 AI: {{ $answer->ai_feedback }}</p>
+                        <p class="text-sm text-slate-300 mt-2 bg-white/5 p-3 border border-white/10">AI: {{ $answer->ai_feedback }}</p>
                     @endif
                     @if ($question->explanation)
                         <p class="text-sm text-gray-500 mt-2 bg-gray-50 p-3 rounded">เฉลย: {{ $question->explanation }}</p>

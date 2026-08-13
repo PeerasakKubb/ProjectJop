@@ -1,7 +1,7 @@
 <x-guest-layout>
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <h2 class="text-2xl font-black text-white mb-1">เข้าสู่ระบบ</h2>
+    <h2 class="text-2xl font-semibold text-white mb-1">เข้าสู่ระบบ</h2>
     <p class="text-sm text-slate-400 mb-6">เข้าสู่ระบบเพื่อใช้งานหลังบ้าน</p>
 
     <form method="POST" action="{{ route('login') }}">
@@ -28,13 +28,13 @@
 
         <div class="flex items-center justify-between mt-6">
             @if (Route::has('password.request'))
-                <a class="text-sm text-cyan-400 hover:text-cyan-300" href="{{ route('password.request') }}">ลืมรหัสผ่าน?</a>
+                <a class="text-sm text-gold hover:text-gold-light" href="{{ route('password.request') }}">ลืมรหัสผ่าน?</a>
             @endif
             <x-primary-button>เข้าสู่ระบบ</x-primary-button>
         </div>
     </form>
 
     <p class="text-center text-sm text-slate-500 mt-6">
-        ยังไม่มีบัญชี? <a href="{{ route('register') }}" class="text-violet-400 font-semibold hover:text-cyan-400">สมัครสมาชิก</a>
+        ยังไม่มีบัญชี? <a href="{{ route('register') }}" class="text-gold font-semibold hover:text-gold-light">สมัครสมาชิก</a>
     </p>
 </x-guest-layout>
