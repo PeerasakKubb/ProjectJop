@@ -36,13 +36,17 @@ class SensorIngestController extends Controller
         $alert = null;
         if ($sensor->alert_enabled && $sensor->max_threshold && $validated['value'] > $sensor->max_threshold) {
             $alert = "{$sensor->name}: {$validated['value']} {$sensor->unit} (เกินกำหนด {$sensor->max_threshold})";
-            $this->notifications->sensorThresholdAlert(
-                $sensor->name,
-                (float) $validated['value'],
-                $sensor->unit,
-                (float) $sensor->max_threshold,
-                $sensor->room?->name,
-            );
+            try {
+                $this->notifications->sensorThresholdAlert(
+                    $sensor->name,
+                    (float) $validated['value'],
+                    $sensor->unit,
+                    (float) $sensor->max_threshold,
+                    $sensor->room?->name,
+                );
+            } catch (\Throwable) {
+                // อย่าให้แจ้งเตือนภายนอกทำให้ ESP โพสต์ไม่สำเร็จ
+            }
         }
 
         return response()->json([

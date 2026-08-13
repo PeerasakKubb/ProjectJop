@@ -239,33 +239,33 @@ bool postRaw(const String& path, const String& body,
   responseOut = "";
   if (WiFi.status() != WL_CONNECTED) return false;
 
-  HTTPClient http;
-  http.setTimeout(useRender ? 45000 : 8000);
-  http.setReuse(false);
+  // เว็บออนไลน์เป็นแหล่งหลัก ห้ามค้างที่ยิงเครื่องในแล็บ
+  useRender = true;
 
-  String url = baseUrl() + path;
-  Serial.println(url);
+  for (int attempt = 1; attempt <= 3; attempt++) {
+    HTTPClient http;
+    http.setTimeout(60000);
+    http.setReuse(false);
 
-  bool okBegin = useRender
-    ? http.begin(secureClient, url)
-    : http.begin(plainClient, url);
+    String url = String("https://") + RENDER_HOST + path;
+    Serial.printf("POST try %d %s\n", attempt, url.c_str());
 
-  if (!okBegin) return false;
+    if (!http.begin(secureClient, url)) {
+      Serial.println("begin fail");
+      delay(400);
+      continue;
+    }
 
-  http.addHeader("Content-Type", "application/json");
-  if (hdrKey && hdrVal) http.addHeader(hdrKey, hdrVal);
+    http.addHeader("Content-Type", "application/json");
+    if (hdrKey && hdrVal) http.addHeader(hdrKey, hdrVal);
 
-  int code = http.POST(body);
-  responseOut = http.getString();
-  Serial.printf("POST %s -> %d\n", path.c_str(), code);
-  http.end();
+    int code = http.POST(body);
+    responseOut = http.getString();
+    Serial.printf("POST %s -> %d\n", path.c_str(), code);
+    http.end();
 
-  if (code >= 200 && code < 300) return true;
-
-  // ถ้า Render พัง ให้ลอง local ครั้งถัดไป
-  if (useRender && (code < 0 || code >= 500)) {
-    Serial.println("Render fail — next try LOCAL");
-    useRender = false;
+    if (code >= 200 && code < 300) return true;
+    delay(800);
   }
   return false;
 }
