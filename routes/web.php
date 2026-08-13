@@ -32,28 +32,28 @@ Route::get('/courses/{course}', [FrontController::class, 'courseShow'])->name('c
 
 /*
 |--------------------------------------------------------------------------
-| Redirect path เก่า → /main
+| Redirect path เก่า → /admin
 |--------------------------------------------------------------------------
 */
-Route::redirect('/dashboard', '/main/dashboard');
-Route::redirect('/architecture', '/main/architecture');
-Route::redirect('/attendance', '/main/attendance');
-Route::redirect('/devices', '/main/devices');
-Route::redirect('/sensors', '/main/sensors');
-Route::redirect('/rfid-cards', '/main/rfid-cards');
-Route::redirect('/notifications', '/main/notifications');
-Route::redirect('/profile', '/main/profile');
-Route::redirect('/admin', '/main/dashboard');
-Route::get('/admin/{path}', function (string $path) {
-    return redirect('/main/'.$path, 301);
+Route::redirect('/dashboard', '/admin/dashboard');
+Route::redirect('/architecture', '/admin/architecture');
+Route::redirect('/attendance', '/admin/attendance');
+Route::redirect('/devices', '/admin/devices');
+Route::redirect('/sensors', '/admin/sensors');
+Route::redirect('/rfid-cards', '/admin/rfid-cards');
+Route::redirect('/notifications', '/admin/notifications');
+Route::redirect('/profile', '/admin/profile');
+Route::redirect('/main', '/admin/dashboard');
+Route::get('/main/{path}', function (string $path) {
+    return redirect('/admin/'.$path, 301);
 })->where('path', '.*');
 
 /*
 |--------------------------------------------------------------------------
-| หลังบ้าน (/main)
+| หลังบ้าน (/admin)
 |--------------------------------------------------------------------------
 */
-Route::prefix('main')->name('admin.')->middleware(['auth', 'verified'])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/architecture', [ArchitectureController::class, 'index'])->name('architecture');
 

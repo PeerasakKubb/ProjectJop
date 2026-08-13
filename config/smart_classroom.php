@@ -1,7 +1,7 @@
 <?php
 
 /**
- * โครงสร้างโมดูลตาม Diagram ระบบ Smart Classroom (หลังบ้าน /main)
+ * โครงสร้างโมดูลตาม Diagram ระบบ Smart Classroom (หลังบ้าน /admin)
  *
  * ชั้น Hub → Input → Control → Learning → Admin
  */
