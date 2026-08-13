@@ -55,4 +55,20 @@ class SensorIngestController extends Controller
             'alert' => $alert,
         ]);
     }
+
+    public function now(): JsonResponse
+    {
+        $rows = Sensor::with('latestReading')->get()->map(function (Sensor $sensor) {
+            $reading = $sensor->latestReading;
+
+            return [
+                'id' => $sensor->id,
+                'value' => $reading ? round((float) $reading->value, 1) : null,
+                'unit' => $sensor->unit,
+                'recorded_at' => $reading?->recorded_at?->toJSON(),
+            ];
+        });
+
+        return response()->json($rows);
+    }
 }

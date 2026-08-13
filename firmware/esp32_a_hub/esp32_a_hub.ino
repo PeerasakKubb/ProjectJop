@@ -238,34 +238,28 @@ bool postRaw(const String& path, const String& body,
              const char* hdrKey, const char* hdrVal, String& responseOut) {
   responseOut = "";
   if (WiFi.status() != WL_CONNECTED) return false;
-
-  // เว็บออนไลน์เป็นแหล่งหลัก ห้ามค้างที่ยิงเครื่องในแล็บ
   useRender = true;
 
-  for (int attempt = 1; attempt <= 3; attempt++) {
+  for (int attempt = 1; attempt <= 2; attempt++) {
     HTTPClient http;
-    http.setTimeout(60000);
+    http.setTimeout(15000);
+    http.setConnectTimeout(15000);
     http.setReuse(false);
-
     String url = String("https://") + RENDER_HOST + path;
     Serial.printf("POST try %d %s\n", attempt, url.c_str());
-
     if (!http.begin(secureClient, url)) {
-      Serial.println("begin fail");
-      delay(400);
+      delay(300);
       continue;
     }
-
     http.addHeader("Content-Type", "application/json");
+    http.addHeader("Connection", "close");
     if (hdrKey && hdrVal) http.addHeader(hdrKey, hdrVal);
-
     int code = http.POST(body);
     responseOut = http.getString();
     Serial.printf("POST %s -> %d\n", path.c_str(), code);
     http.end();
-
     if (code >= 200 && code < 300) return true;
-    delay(800);
+    delay(500);
   }
   return false;
 }
@@ -439,7 +433,8 @@ void setup() {
   }
   if (connectWifi()) {
     secureClient.setInsecure();
-    useRender = USE_HTTPS_DEFAULT;
+    secureClient.setTimeout(30);
+    useRender = true;
     syncTime();
   }
   initRfid();
