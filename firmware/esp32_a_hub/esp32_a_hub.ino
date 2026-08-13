@@ -264,21 +264,36 @@ bool postRaw(const String& path, const String& body,
   return false;
 }
 
-bool postReading(const char* key, float value) {
-  String body = String("{\"api_key\":\"") + key + "\",\"value\":" + String(value, 1) + "}";
-  String resp;
-  return postRaw("/api/sensors/reading", body, nullptr, nullptr, resp);
+bool pushSensorsGet(float t, float h) {
+  if (WiFi.status() != WL_CONNECTED) return false;
+  HTTPClient http;
+  http.setTimeout(90000);
+  http.setConnectTimeout(90000);
+  http.setReuse(false);
+  String url = String("https://") + RENDER_HOST + "/api/sensors/push?temp=" + String(t, 1) + "&humidity=" + String(h, 1);
+  Serial.println(url);
+  if (!http.begin(secureClient, url)) {
+    Serial.println("sensor begin FAIL");
+    return false;
+  }
+  http.addHeader("Connection", "close");
+  int code = http.GET();
+  String body = http.getString();
+  http.end();
+  Serial.printf("SENSOR HTTP %d len=%d\n", code, body.length());
+  return code >= 200 && code < 300;
 }
 
 bool readDht(float& t, float& h) {
-  for (int i = 0; i < 3; i++) {
-    h = dht.readHumidity();
-    delay(40);
-    t = dht.readTemperature();
-    if (!isnan(t) && !isnan(h) && t >= 0 && t <= 60 && h >= 0 && h <= 100) return true;
-    delay(900);
-  }
-  return false;
+  h = dht.readHumidity();
+  delay(50);
+  t = dht.readTemperature();
+  if (!isnan(t) && !isnan(h) && t >= 0 && t <= 60 && h >= 0 && h <= 100) return true;
+  delay(1200);
+  h = dht.readHumidity();
+  delay(50);
+  t = dht.readTemperature();
+  return !isnan(t) && !isnan(h) && t >= 0 && t <= 60 && h >= 0 && h <= 100;
 }
 
 void handleSensor() {
@@ -291,8 +306,9 @@ void handleSensor() {
   lastTemp = t;
   lastHum = h;
   Serial.printf("DHT11 T=%.0f H=%.0f\n", t, h);
-  postReading(TEMP_API_KEY, t);
-  postReading(HUMIDITY_API_KEY, h);
+  if (!pushSensorsGet(t, h)) {
+    Serial.println("sensor push FAIL");
+  }
 }
 
 String uidHex(MFRC522::Uid* uid) {

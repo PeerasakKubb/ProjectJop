@@ -15,6 +15,7 @@ Route::post('/rfid/scan', [RfidScanController::class, 'scan'])
     ->middleware(VerifyReaderApiKey::class);
 
 Route::post('/sensors/reading', [SensorIngestController::class, 'store']);
+Route::get('/sensors/push', [SensorIngestController::class, 'push']);
 Route::get('/sensors/now', [SensorIngestController::class, 'now']);
 
 Route::get('/devices/poll', [DeviceStatusController::class, 'poll']);

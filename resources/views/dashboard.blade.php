@@ -161,67 +161,42 @@
     </div>
 
     @push('scripts')
+    @include('partials.sensor-live-js')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        const ctx = document.getElementById('attendanceChart');
-        if (ctx) {
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: {!! json_encode($weeklyAttendance->pluck('date')->map(fn($d) => \Carbon\Carbon::parse($d)->format('d/m'))) !!},
-                    datasets: [{
-                        label: 'จำนวนคนเข้าเรียน',
-                        data: {!! json_encode($weeklyAttendance->pluck('count')) !!},
-                        backgroundColor: 'rgba(196, 163, 90, 0.35)',
-                        borderColor: '#c4a35a',
-                        borderWidth: 1,
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: {
-                            grid: { display: false },
-                            ticks: { color: '#94a3b8' },
-                        },
-                        y: {
-                            beginAtZero: true,
-                            ticks: { stepSize: 1, color: '#94a3b8' },
-                            grid: { color: 'rgba(255,255,255,0.06)' },
+        try {
+            const ctx = document.getElementById('attendanceChart');
+            if (ctx && window.Chart) {
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: {!! json_encode($weeklyAttendance->pluck('date')->map(fn($d) => \Carbon\Carbon::parse($d)->format('d/m'))) !!},
+                        datasets: [{
+                            label: 'จำนวนคนเข้าเรียน',
+                            data: {!! json_encode($weeklyAttendance->pluck('count')) !!},
+                            backgroundColor: 'rgba(196, 163, 90, 0.35)',
+                            borderColor: '#c4a35a',
+                            borderWidth: 1,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { color: '#94a3b8' },
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1, color: '#94a3b8' },
+                                grid: { color: 'rgba(255,255,255,0.06)' },
+                            }
                         }
                     }
-                }
-            });
-        }
-
-        const sensorAgo = (iso) => {
-            if (!iso) return '';
-            const sec = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
-            if (sec < 8) return 'อัปเดต เมื่อกี้';
-            if (sec < 60) return 'อัปเดต ' + sec + ' วินาทีที่แล้ว';
-            return 'อัปเดต ' + Math.floor(sec / 60) + ' นาทีที่แล้ว';
-        };
-        const refreshSensors = () => {
-            fetch('/api/sensors/now', { headers: { Accept: 'application/json' }, cache: 'no-store' })
-                .then(r => r.json())
-                .then(rows => {
-                    (rows || []).forEach(row => {
-                        const box = document.querySelector('[data-sensor-id="' + row.id + '"]');
-                        if (!box) return;
-                        const valueEl = box.querySelector('.js-sensor-value');
-                        const agoEl = box.querySelector('.js-sensor-ago');
-                        if (valueEl && row.value !== null) {
-                            const unit = valueEl.querySelector('span');
-                            valueEl.innerHTML = Number(row.value).toFixed(1) + ' ' + (unit ? unit.outerHTML : '');
-                        }
-                        if (agoEl) agoEl.textContent = sensorAgo(row.recorded_at);
-                    });
-                })
-                .catch(() => {});
-        };
-        refreshSensors();
-        setInterval(refreshSensors, 5000);
+                });
+            }
+        } catch (e) {}
 
         setInterval(() => {
             fetch('{{ route('admin.attendance.today') }}')

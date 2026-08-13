@@ -56,6 +56,30 @@ class SensorIngestController extends Controller
         ]);
     }
 
+    /**
+     * ESP-A ส่งค่าแบบ GET เหมือนไฟ ESP-B ที่ใช้ได้จริงบน Render
+     * GET /api/sensors/push?temp=28.4&humidity=57
+     */
+    public function push(Request $request): JsonResponse
+    {
+        $temp = $request->query('temp', $request->input('temp'));
+        $humidity = $request->query('humidity', $request->input('humidity'));
+        $ids = [];
+
+        if ($temp !== null && $temp !== '') {
+            $ids['temp'] = $this->writeReading('sensor-temp-key', (float) $temp);
+        }
+        if ($humidity !== null && $humidity !== '') {
+            $ids['humidity'] = $this->writeReading('sensor-humidity-key', (float) $humidity);
+        }
+
+        if ($ids === []) {
+            return response()->json(['message' => 'temp or humidity required'], 422);
+        }
+
+        return response()->json(['success' => true, 'reading_ids' => $ids]);
+    }
+
     public function now(): JsonResponse
     {
         $rows = Sensor::with('latestReading')->get()->map(function (Sensor $sensor) {
@@ -69,6 +93,22 @@ class SensorIngestController extends Controller
             ];
         });
 
-        return response()->json($rows);
+        return response()->json($rows)->header('Cache-Control', 'no-store, no-cache');
+    }
+
+    private function writeReading(string $apiKey, float $value): ?int
+    {
+        $sensor = Sensor::where('api_key', $apiKey)->first();
+        if (! $sensor) {
+            return null;
+        }
+
+        $reading = SensorReading::create([
+            'sensor_id' => $sensor->id,
+            'value' => $value,
+            'recorded_at' => now(),
+        ]);
+
+        return $reading->id;
     }
 }

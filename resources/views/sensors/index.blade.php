@@ -62,59 +62,34 @@
     </div>
 
     @push('scripts')
+    @include('partials.sensor-live-js')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        const readings = @json($readings);
-        const sensors = @json($sensors->pluck('name', 'id'));
-        const colors = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'];
-        const datasets = Object.entries(readings).map(([sensorId, data], i) => ({
-            label: sensors[sensorId] || `Sensor ${sensorId}`,
-            data: data.map(r => ({ x: r.recorded_at, y: parseFloat(r.value) })),
-            borderColor: colors[i % colors.length],
-            tension: 0.3,
-            fill: false,
-        }));
-        if (datasets.length) {
-            new Chart(document.getElementById('sensorChart'), {
-                type: 'line',
-                data: { datasets },
-                options: {
-                    responsive: true,
-                    scales: {
-                        x: { type: 'category', labels: datasets[0]?.data.map(d => new Date(d.x).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})) },
-                        y: { beginAtZero: false }
-                    }
-                }
-            });
-        }
-
-        const sensorAgo = (iso) => {
-            if (!iso) return '';
-            const sec = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 1000));
-            if (sec < 8) return 'อัปเดต เมื่อกี้';
-            if (sec < 60) return 'อัปเดต ' + sec + ' วินาทีที่แล้ว';
-            return 'อัปเดต ' + Math.floor(sec / 60) + ' นาทีที่แล้ว';
-        };
-        const tick = () => {
-            fetch('/api/sensors/now', { headers: { Accept: 'application/json' }, cache: 'no-store' })
-                .then((r) => r.json())
-                .then((rows) => {
-                    (rows || []).forEach((row) => {
-                        const box = document.querySelector('[data-sensor-id="' + row.id + '"]');
-                        if (!box) return;
-                        const valueEl = box.querySelector('.js-sensor-value');
-                        const agoEl = box.querySelector('.js-sensor-ago');
-                        if (valueEl && row.value !== null) {
-                            const unit = valueEl.querySelector('span');
-                            valueEl.innerHTML = Number(row.value).toFixed(1) + ' ' + (unit ? unit.outerHTML : '');
+        try {
+            const readings = @json($readings);
+            const sensors = @json($sensors->pluck('name', 'id'));
+            const colors = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444', '#8b5cf6'];
+            const datasets = Object.entries(readings).map(([sensorId, data], i) => ({
+                label: sensors[sensorId] || `Sensor ${sensorId}`,
+                data: data.map(r => ({ x: r.recorded_at, y: parseFloat(r.value) })),
+                borderColor: colors[i % colors.length],
+                tension: 0.3,
+                fill: false,
+            }));
+            if (datasets.length && window.Chart) {
+                new Chart(document.getElementById('sensorChart'), {
+                    type: 'line',
+                    data: { datasets },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: { type: 'category', labels: datasets[0]?.data.map(d => new Date(d.x).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})) },
+                            y: { beginAtZero: false }
                         }
-                        if (agoEl) agoEl.textContent = sensorAgo(row.recorded_at);
-                    });
-                })
-                .catch(() => {});
-        };
-        tick();
-        setInterval(tick, 5000);
+                    }
+                });
+            }
+        } catch (e) {}
     </script>
     @endpush
 </x-app-layout>
