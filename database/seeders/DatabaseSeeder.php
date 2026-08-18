@@ -132,10 +132,10 @@ class DatabaseSeeder extends Seeder
 
         $course = Course::create([
             'teacher_id' => $teacher->id,
-            'title' => 'ฟิสิกส์ ม.4',
-            'subject' => 'ฟิสิกส์',
-            'grade_level' => 'ม.4',
-            'description' => 'หลักการพื้นฐานด้านแรง การเคลื่อนที่ และพลังงาน',
+            'title' => 'ไฟฟ้าและสนามไฟฟ้าระดับวุฒิ ปวส.',
+            'subject' => 'ไฟฟ้าและสนามไฟฟ้า',
+            'grade_level' => 'ปวส.',
+            'description' => 'เนื้อหาไฟฟ้า กระแสไฟฟ้า แม่เหล็กไฟฟ้า และสนามไฟฟ้า สำหรับระดับ ปวส.',
             'price' => 0,
             'is_published' => true,
         ]);
